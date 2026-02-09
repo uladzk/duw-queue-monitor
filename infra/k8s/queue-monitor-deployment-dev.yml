@@ -17,7 +17,7 @@ spec:
         app: queue-monitor
     spec:
       containers:
-      - image: acrduwshared.azurecr.io/queue-monitor:1.1.2
+      - image: acrduwshared.azurecr.io/queue-monitor:1.2.0
         name: queue-monitor
         env:
         - name: LOG_LEVEL
