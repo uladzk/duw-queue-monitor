@@ -43,3 +43,19 @@ resource "kubernetes_manifest" "eso_infisical_secret_store" {
 
   depends_on = [kubernetes_secret.infisical_universal_identity]
 }
+
+resource "kubernetes_namespace" "cnpg" {
+  metadata {
+    name = "cnpg-system"
+  }
+}
+
+resource "helm_release" "cnpg" {
+  name       = "cnpg"
+  repository = "https://cloudnative-pg.github.io/charts"
+  chart      = "cloudnative-pg"
+  version    = "0.23.0"
+  namespace  = kubernetes_namespace.cnpg.metadata[0].name
+
+  depends_on = [kubernetes_namespace.cnpg]
+}
