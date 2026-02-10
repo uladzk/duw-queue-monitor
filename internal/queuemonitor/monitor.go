@@ -3,6 +3,8 @@ package queuemonitor
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/UladzK/duw-queue-monitor/internal/logger"
 )
 
@@ -15,14 +17,16 @@ type DefaultQueueMonitor struct {
 	notifier  Notifier
 	state     QueueState
 	lastQueue *Queue
+	statsRepo DailyStatsRepository
 }
 
-func NewQueueMonitor(cfg *Config, log *logger.Logger, collector *StatusCollector, notifier Notifier) *DefaultQueueMonitor {
+func NewQueueMonitor(cfg *Config, log *logger.Logger, collector *StatusCollector, notifier Notifier, statsRepo DailyStatsRepository) *DefaultQueueMonitor {
 	m := &DefaultQueueMonitor{
 		cfg:       cfg,
 		log:       log,
 		collector: collector,
 		notifier:  notifier,
+		statsRepo: statsRepo,
 	}
 	m.state = &UninitializedState{notifier: notifier, channelName: cfg.BroadcastChannelName}
 	return m
@@ -55,6 +59,10 @@ func (h *DefaultQueueMonitor) CheckAndProcessStatus(ctx context.Context) error {
 
 	if newState.Name() != prevStateName {
 		h.log.Info("State transition", "from", prevStateName, "to", newState.Name())
+
+		if newState.Name() == "Inactive" && h.statsRepo != nil {
+			h.saveDailyStats(ctx, queue)
+		}
 	}
 
 	h.state = newState
@@ -62,4 +70,13 @@ func (h *DefaultQueueMonitor) CheckAndProcessStatus(ctx context.Context) error {
 	h.log.Debug("Latest state:", "stateName", h.state.Name(), "ticketsLeft", h.state.TicketsLeft())
 
 	return nil
+}
+
+func (h *DefaultQueueMonitor) saveDailyStats(ctx context.Context, queue *Queue) {
+	today := time.Now().UTC().Truncate(24 * time.Hour)
+	if err := h.statsRepo.SaveDailyStats(ctx, queue.ID, queue.Name, today, queue.TicketsServed, queue.RegisteredTickets); err != nil {
+		h.log.Error("Failed to save daily stats", err, "queueId", queue.ID)
+		return
+	}
+	h.log.Info("Daily stats saved", "queueId", queue.ID, "date", today.Format("2006-01-02"))
 }
