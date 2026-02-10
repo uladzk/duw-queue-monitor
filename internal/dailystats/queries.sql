@@ -9,10 +9,12 @@ DO UPDATE SET
     updated_at = NOW();
 
 -- name: GetDailyStatsByDate :one
-SELECT * FROM queue_daily_stats
+SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
+FROM queue_daily_stats
 WHERE queue_id = $1 AND date = $2;
 
 -- name: GetStatsByDateRange :many
-SELECT * FROM queue_daily_stats
+SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
+FROM queue_daily_stats
 WHERE queue_id = $1 AND date BETWEEN $2 AND $3
 ORDER BY date ASC;

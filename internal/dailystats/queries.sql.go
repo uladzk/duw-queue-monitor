@@ -11,7 +11,8 @@ import (
 )
 
 const getDailyStatsByDate = `-- name: GetDailyStatsByDate :one
-SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at FROM queue_daily_stats
+SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
+FROM queue_daily_stats
 WHERE queue_id = $1 AND date = $2
 `
 
@@ -37,7 +38,8 @@ func (q *Queries) GetDailyStatsByDate(ctx context.Context, arg GetDailyStatsByDa
 }
 
 const getStatsByDateRange = `-- name: GetStatsByDateRange :many
-SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at FROM queue_daily_stats
+SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
+FROM queue_daily_stats
 WHERE queue_id = $1 AND date BETWEEN $2 AND $3
 ORDER BY date ASC
 `
