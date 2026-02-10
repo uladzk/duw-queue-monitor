@@ -27,12 +27,14 @@ type Response struct {
 
 // Queue represents a queue state retrieved from the DUW API
 type Queue struct {
-	ID          int    `json:"id"`
-	Name        string `json:"name"`
-	Enabled     bool   `json:"enabled"`
-	Active      bool   `json:"active"`
-	TicketValue string `json:"ticket_value"`
-	TicketsLeft int    `json:"tickets_left"`
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	Enabled           bool   `json:"enabled"`
+	Active            bool   `json:"active"`
+	TicketValue       string `json:"ticket_value"`
+	TicketsLeft       int    `json:"tickets_left"`
+	TicketsServed     int    `json:"tickets_served"`
+	RegisteredTickets int    `json:"registered_tickets"`
 }
 
 func NewStatusCollector(cfg *QueueMonitorConfig, httpClient *http.Client, log *logger.Logger) *StatusCollector {
