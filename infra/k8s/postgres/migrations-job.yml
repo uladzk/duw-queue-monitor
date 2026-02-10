@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: duw-migrations-${VERSION}
+  namespace: default
+spec:
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrations
+          image: acrduwshared.azurecr.io/duw-migrations:${VERSION}
+          env:
+            - name: GOOSE_DRIVER
+              value: "postgres"
+            - name: GOOSE_DBSTRING
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-app
+                  key: uri
+            - name: GOOSE_COMMAND
+              value: "up"

@@ -5,7 +5,7 @@ on:
     inputs:
       service:
         type: choice
-        options: [queue-monitor, telegram-bot]
+        options: [queue-monitor, telegram-bot, duw-migrations]
         description: 'Name of the service to publish'
         required: true
       version:
@@ -49,19 +49,25 @@ jobs:
           else
             echo "Image $IMAGE_NAME does not exist. Proceeding with build."
           fi
-      - id: get-service-name-code
-        name: 'Get service name in Go code style'
+      - id: get-build-config
+        name: 'Get build configuration'
         shell: bash
         run: |
-          SERVICE_NAME_TRANSFORMED=$(echo "${{ inputs.service }}" | sed 's/-//g')
-          echo "SERVICE_NAME_CODE=$SERVICE_NAME_TRANSFORMED" >> $GITHUB_OUTPUT
+          if [ "${{ inputs.service }}" = "duw-migrations" ]; then
+            echo "CONTEXT=./db" >> $GITHUB_OUTPUT
+            echo "DOCKERFILE=./db/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            SERVICE_NAME_TRANSFORMED=$(echo "${{ inputs.service }}" | sed 's/-//g')
+            echo "CONTEXT=." >> $GITHUB_OUTPUT
+            echo "DOCKERFILE=./cmd/${SERVICE_NAME_TRANSFORMED}/Dockerfile" >> $GITHUB_OUTPUT
+          fi
 
       - id: build-push-image
         name: 'Build and push Docker image'
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./cmd/${{ steps.get-service-name-code.outputs.SERVICE_NAME_CODE }}/Dockerfile
+          context: ${{ steps.get-build-config.outputs.CONTEXT }}
+          file: ${{ steps.get-build-config.outputs.DOCKERFILE }}
           push: true
           tags: |
             acrduwshared.azurecr.io/${{ inputs.service }}:${{ inputs.version }}

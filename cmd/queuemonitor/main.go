@@ -2,17 +2,21 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/UladzK/duw-queue-monitor/internal/dailystats"
 	"github.com/UladzK/duw-queue-monitor/internal/logger"
 	"github.com/UladzK/duw-queue-monitor/internal/notifications"
 	"github.com/UladzK/duw-queue-monitor/internal/queuemonitor"
 
 	"github.com/caarlos0/env/v11"
+	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -32,10 +36,11 @@ func run() error {
 		return fmt.Errorf("failed to initialize logger: %w", err)
 	}
 
-	runner, err := buildRunner(log)
+	runner, cleanup, err := buildRunner(log)
 	if err != nil {
 		return fmt.Errorf("failed to initialize runner: %w", err)
 	}
+	defer cleanup()
 
 	log.Info("Starting queue monitor...")
 
@@ -62,10 +67,10 @@ func buildLogger() (*logger.Logger, error) {
 	return logger.NewLogger(&cfg), nil
 }
 
-func buildRunner(log *logger.Logger) (*queuemonitor.Runner, error) {
+func buildRunner(log *logger.Logger) (*queuemonitor.Runner, func(), error) {
 	var cfg queuemonitor.Config
 	if err := env.Parse(&cfg); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	httpClient := &http.Client{
@@ -74,18 +79,35 @@ func buildRunner(log *logger.Logger) (*queuemonitor.Runner, error) {
 
 	opt, err := redis.ParseURL(cfg.QueueMonitor.RedisConString)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	redisClient := redis.NewClient(opt)
 
 	stateRepo := queuemonitor.NewMonitorStateRepository(redisClient, cfg.QueueMonitor.StateTtlSeconds)
 	collector := queuemonitor.NewStatusCollector(&cfg.QueueMonitor, httpClient, log)
 	notifier := buildNotifier(&cfg, log, httpClient)
-	monitor := queuemonitor.NewQueueMonitor(&cfg, log, collector, notifier)
-	weekdayMonitor := queuemonitor.NewWeekdayQueueMonitor(monitor, queuemonitor.NewSystemDateTimeProvider(), log)
+
+	cleanup := func() {}
+	var statsRepo queuemonitor.DailyStatsRepository
+	if cfg.FFDailyStatsEnabled {
+		db, err := sql.Open("postgres", cfg.QueueMonitor.PostgresConString)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to open postgres connection: %w", err)
+		}
+		if err := db.Ping(); err != nil {
+			return nil, nil, fmt.Errorf("failed to ping postgres: %w", err)
+		}
+		log.Info("Daily stats feature enabled, connected to PostgreSQL")
+		statsRepo = dailystats.NewRepository(db)
+		cleanup = func() { db.Close() }
+	}
+
+	timeProvider := queuemonitor.NewSystemDateTimeProvider()
+	monitor := queuemonitor.NewQueueMonitor(&cfg, log, collector, notifier, statsRepo, timeProvider)
+	weekdayMonitor := queuemonitor.NewWeekdayQueueMonitor(monitor, timeProvider, log)
 
 	runner := queuemonitor.NewRunner(&cfg, log, weekdayMonitor, stateRepo)
-	return runner, nil
+	return runner, cleanup, nil
 }
 
 func buildNotifier(cfg *queuemonitor.Config, log *logger.Logger, httpClient *http.Client) queuemonitor.Notifier {

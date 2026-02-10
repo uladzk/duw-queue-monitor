@@ -1,0 +1,31 @@
+services:
+  redis:
+    image: redis:8.0.3-alpine
+    ports:
+      - "6379:6379"
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: duw_stats_admin
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: duw_stats
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U duw_stats_admin -d duw_stats"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrations:
+    build:
+      context: ../../db
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: "postgres://duw_stats_admin:localdev@postgres:5432/duw_stats?sslmode=disable"
+      GOOSE_COMMAND: up

@@ -5,6 +5,7 @@ import "github.com/UladzK/duw-queue-monitor/internal/notifications"
 type Config struct {
 	StatusCheckInternalSeconds int    `env:"STATUS_CHECK_INTERVAL_SECONDS" envDefault:"10"`
 	BroadcastChannelName       string `env:"NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME,required"`
+	FFDailyStatsEnabled        bool   `env:"FF_DAILY_STATS_ENABLED" envDefault:"false"`
 	QueueMonitor               QueueMonitorConfig
 	NotificationTelegram       notifications.TelegramConfig
 }
@@ -19,4 +20,5 @@ type QueueMonitorConfig struct {
 	HttpClientTimeoutSeconds  int    `env:"MONITOR_HTTP_CLIENT_TIMEOUT_SECONDS" envDefault:"5"`
 	RedisConString            string `env:"STATE_REDIS_CONNECTION_STRING,required"`
 	StateTtlSeconds           int    `env:"STATE_TTL_SECONDS" envDefault:"60"`
+	PostgresConString         string `env:"STATS_POSTGRES_CONNECTION_STRING"`
 }

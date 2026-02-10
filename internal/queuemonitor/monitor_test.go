@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
 	"github.com/UladzK/duw-queue-monitor/internal/logger"
 
 	"github.com/google/go-cmp/cmp"
@@ -47,6 +49,37 @@ func (f *mockNotifier) SendMessage(ctx context.Context, chatID, text string) err
 	}
 
 	return nil
+}
+
+type mockDailyStatsRepo struct {
+	saveCalled            bool
+	lastQueueID           int
+	lastQueueName         string
+	lastDate              time.Time
+	lastTicketsServed     int
+	lastRegisteredTickets int
+	shouldFail            bool
+}
+
+func (m *mockDailyStatsRepo) SaveDailyStats(ctx context.Context, queueID int, queueName string, date time.Time, ticketsServed int, registeredTickets int) error {
+	m.saveCalled = true
+	m.lastQueueID = queueID
+	m.lastQueueName = queueName
+	m.lastDate = date
+	m.lastTicketsServed = ticketsServed
+	m.lastRegisteredTickets = registeredTickets
+	if m.shouldFail {
+		return fmt.Errorf("mock stats save failed")
+	}
+	return nil
+}
+
+type mockDateTimeProvider struct {
+	fixedTime time.Time
+}
+
+func (m *mockDateTimeProvider) Now() time.Time {
+	return m.fixedTime
 }
 
 func deriveStateName(active, enabled bool) string {
@@ -122,7 +155,7 @@ func TestCheckAndProcessStatus_WhenStateIsNotInitialized_CorrectlyHandlesStateTr
 
 			notifier := &mockNotifier{}
 
-			sut := NewQueueMonitor(cfg, logger, collector, notifier)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			expectedFinalState := &MonitorState{
 				StateName:           deriveStateName(tc.newState.Active, tc.newState.Enabled),
 				QueueActive:         tc.newState.Active,
@@ -258,7 +291,7 @@ func TestCheckAndProcessStatus_WhenStateIsInitialized_CorrectlyHandlesStrateTran
 
 			notifier := &mockNotifier{}
 
-			sut := NewQueueMonitor(cfg, logger, collector, notifier)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			sut.Init(&tc.initialState)
 			expectedFinalState := &MonitorState{
 				StateName:           deriveStateName(tc.newState.Active, tc.newState.Enabled),
@@ -312,7 +345,7 @@ func TestCheckAndProcessStatus_WhenCollectingQueueStatusFailed_DoesNotPushNotifi
 
 	notifier := &mockNotifier{shouldFail: true}
 
-	sut := NewQueueMonitor(cfg, logger, collector, notifier)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{
 		QueueActive:         true,
 		QueueEnabled:        true,
@@ -368,7 +401,7 @@ func TestCheckAndProcessStatus_WhenPushNotificationFailed_ReturnsError(t *testin
 
 	notifier := &mockNotifier{shouldFail: true}
 
-	sut := NewQueueMonitor(cfg, logger, collector, notifier)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{
 		QueueActive:  true,
 		QueueEnabled: true,
@@ -421,7 +454,7 @@ func TestCheckAndProcessStatus_WhenApiReturnsNegativeTicketsLeft_ReturnsErrorAnd
 	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 	notifier := &mockNotifier{}
 
-	sut := NewQueueMonitor(cfg, logger, collector, notifier)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 
 	// Act
 	err := sut.CheckAndProcessStatus(context.Background())
@@ -532,7 +565,7 @@ func TestCheckAndProcessStatus_MessageFormat_CorrectlyFormatsMessages(t *testing
 			logger := logger.NewLogger(&logger.Config{Level: "error"})
 			collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 			notifier := &mockNotifier{}
-			sut := NewQueueMonitor(cfg, logger, collector, notifier)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			if tc.initialState != nil {
 				sut.Init(tc.initialState)
 			}
@@ -557,5 +590,242 @@ func TestCheckAndProcessStatus_MessageFormat_CorrectlyFormatsMessages(t *testing
 				t.Errorf("Expected message to be:\n'%s'\nbut got:\n'%s'", tc.expectedMessage, notifier.lastSentMessage)
 			}
 		})
+	}
+}
+
+func TestCheckAndProcessStatus_WhenTransitionToInactiveWithStatsRepo_SavesDailyStats(t *testing.T) {
+	// Arrange
+	testConditions := []struct {
+		name         string
+		initialState MonitorState
+	}{
+		{
+			"Condition 1: \"queue was active and enabled, queue becomes inactive, stats repo provided.\" Expected: \"daily stats should be saved.\"",
+			MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10, LastTicketProcessed: "K123"},
+		},
+		{
+			"Condition 2: \"queue was active and disabled, queue becomes inactive, stats repo provided.\" Expected: \"daily stats should be saved.\"",
+			MonitorState{StateName: "ActiveDisabled", QueueActive: true, QueueEnabled: false, TicketsLeft: 0, LastTicketProcessed: "K123"},
+		},
+	}
+
+	for _, tc := range testConditions {
+		t.Run(tc.name, func(t *testing.T) {
+			const queueName = "Odbior karty"
+			mockDuwApi := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintf(w, `{
+					"result": {
+						"Wrocław": [{
+							"id": 24,
+							"name": "%v",
+							"ticket_value": "",
+							"tickets_left": 0,
+							"active": false,
+							"enabled": false,
+							"tickets_served": 42,
+							"registered_tickets": 50
+						}]
+					}
+				}`, queueName)
+			}))
+			defer mockDuwApi.Close()
+
+			cfg := &Config{
+				BroadcastChannelName: "test-channel",
+				QueueMonitor: QueueMonitorConfig{
+					StatusApiUrl:              mockDuwApi.URL,
+					StatusCheckTimeoutMs:      4000,
+					StatusCheckMaxAttempts:    3,
+					StatusCheckAttemptDelayMs: 500,
+					StatusMonitoredQueueId:    24,
+					StatusMonitoredQueueCity:  "Wrocław",
+				},
+			}
+
+			logger := logger.NewLogger(&logger.Config{Level: "error"})
+			collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
+			notifier := &mockNotifier{}
+			statsRepo := &mockDailyStatsRepo{}
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
+			sut.Init(&tc.initialState)
+
+			// Act
+			err := sut.CheckAndProcessStatus(context.Background())
+
+			// Assert
+			if err != nil {
+				t.Fatalf("Expected successful execution, but execution returned error: %v", err)
+			}
+
+			if !statsRepo.saveCalled {
+				t.Error("Expected daily stats to be saved on transition to Inactive, but SaveDailyStats was not called")
+			}
+
+			if statsRepo.lastQueueID != 24 {
+				t.Errorf("Expected queueID 24, got %d", statsRepo.lastQueueID)
+			}
+
+			if statsRepo.lastTicketsServed != 42 {
+				t.Errorf("Expected ticketsServed 42, got %d", statsRepo.lastTicketsServed)
+			}
+
+			if statsRepo.lastRegisteredTickets != 50 {
+				t.Errorf("Expected registeredTickets 50, got %d", statsRepo.lastRegisteredTickets)
+			}
+
+			expectedDate := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
+			if statsRepo.lastDate != expectedDate {
+				t.Errorf("Expected date %v, got %v", expectedDate, statsRepo.lastDate)
+			}
+		})
+	}
+}
+
+func TestCheckAndProcessStatus_WhenNoTransitionToInactive_DoesNotSaveDailyStats(t *testing.T) {
+	// Arrange
+	mockDuwApi := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{
+			"result": {
+				"Wrocław": [{
+					"id": 24,
+					"name": "Odbior karty",
+					"ticket_value": "K123",
+					"tickets_left": 5,
+					"active": true,
+					"enabled": true,
+					"tickets_served": 42,
+					"registered_tickets": 50
+				}]
+			}
+		}`)
+	}))
+	defer mockDuwApi.Close()
+
+	cfg := &Config{
+		BroadcastChannelName: "test-channel",
+		QueueMonitor: QueueMonitorConfig{
+			StatusApiUrl:              mockDuwApi.URL,
+			StatusCheckTimeoutMs:      4000,
+			StatusCheckMaxAttempts:    3,
+			StatusCheckAttemptDelayMs: 500,
+			StatusMonitoredQueueId:    24,
+			StatusMonitoredQueueCity:  "Wrocław",
+		},
+	}
+
+	logger := logger.NewLogger(&logger.Config{Level: "error"})
+	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
+	notifier := &mockNotifier{}
+	statsRepo := &mockDailyStatsRepo{}
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
+	sut.Init(&MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10})
+
+	// Act
+	err := sut.CheckAndProcessStatus(context.Background())
+
+	// Assert
+	if err != nil {
+		t.Fatalf("Expected successful execution, but execution returned error: %v", err)
+	}
+
+	if statsRepo.saveCalled {
+		t.Error("Expected daily stats NOT to be saved when no transition to Inactive, but SaveDailyStats was called")
+	}
+}
+
+func TestCheckAndProcessStatus_WhenStatsRepoIsNil_DoesNotPanicOnInactiveTransition(t *testing.T) {
+	// Arrange
+	mockDuwApi := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{
+			"result": {
+				"Wrocław": [{
+					"id": 24,
+					"name": "Odbior karty",
+					"ticket_value": "",
+					"tickets_left": 0,
+					"active": false,
+					"enabled": false
+				}]
+			}
+		}`)
+	}))
+	defer mockDuwApi.Close()
+
+	cfg := &Config{
+		BroadcastChannelName: "test-channel",
+		QueueMonitor: QueueMonitorConfig{
+			StatusApiUrl:              mockDuwApi.URL,
+			StatusCheckTimeoutMs:      4000,
+			StatusCheckMaxAttempts:    3,
+			StatusCheckAttemptDelayMs: 500,
+			StatusMonitoredQueueId:    24,
+			StatusMonitoredQueueCity:  "Wrocław",
+		},
+	}
+
+	logger := logger.NewLogger(&logger.Config{Level: "error"})
+	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
+	notifier := &mockNotifier{}
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
+	sut.Init(&MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10})
+
+	// Act
+	err := sut.CheckAndProcessStatus(context.Background())
+
+	// Assert
+	if err != nil {
+		t.Fatalf("Expected successful execution with nil statsRepo, but execution returned error: %v", err)
+	}
+}
+
+func TestCheckAndProcessStatus_WhenStatsRepoFails_DoesNotReturnError(t *testing.T) {
+	// Arrange
+	mockDuwApi := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, `{
+			"result": {
+				"Wrocław": [{
+					"id": 24,
+					"name": "Odbior karty",
+					"ticket_value": "",
+					"tickets_left": 0,
+					"active": false,
+					"enabled": false,
+					"tickets_served": 42,
+					"registered_tickets": 50
+				}]
+			}
+		}`)
+	}))
+	defer mockDuwApi.Close()
+
+	cfg := &Config{
+		BroadcastChannelName: "test-channel",
+		QueueMonitor: QueueMonitorConfig{
+			StatusApiUrl:              mockDuwApi.URL,
+			StatusCheckTimeoutMs:      4000,
+			StatusCheckMaxAttempts:    3,
+			StatusCheckAttemptDelayMs: 500,
+			StatusMonitoredQueueId:    24,
+			StatusMonitoredQueueCity:  "Wrocław",
+		},
+	}
+
+	logger := logger.NewLogger(&logger.Config{Level: "error"})
+	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
+	notifier := &mockNotifier{}
+	statsRepo := &mockDailyStatsRepo{shouldFail: true}
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
+	sut.Init(&MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10})
+
+	// Act
+	err := sut.CheckAndProcessStatus(context.Background())
+
+	// Assert
+	if err != nil {
+		t.Fatalf("Expected successful execution even when statsRepo fails, but got error: %v", err)
+	}
+
+	if !statsRepo.saveCalled {
+		t.Error("Expected SaveDailyStats to be called, but it wasn't")
 	}
 }

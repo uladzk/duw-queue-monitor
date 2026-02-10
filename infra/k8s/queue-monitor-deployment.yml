@@ -28,6 +28,8 @@ spec:
           value: "redis://redis-service:6379/0"
         - name: STATUS_CHECK_INTERVAL_SECONDS
           value: "5"
+        - name: FF_DAILY_STATS_ENABLED
+          value: "false"
         - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
           valueFrom:
             secretKeyRef:
