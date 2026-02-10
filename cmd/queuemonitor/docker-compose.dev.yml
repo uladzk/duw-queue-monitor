@@ -20,7 +20,7 @@ services:
 
   migrations:
     build:
-      context: ./db
+      context: ../../db
       dockerfile: Dockerfile
     depends_on:
       postgres:
