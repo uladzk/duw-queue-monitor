@@ -5,17 +5,16 @@
 package dailystats
 
 import (
-	"database/sql"
 	"time"
 )
 
 type QueueDailyStat struct {
-	ID                int64        `json:"id"`
-	QueueID           int32        `json:"queue_id"`
-	QueueName         string       `json:"queue_name"`
-	Date              time.Time    `json:"date"`
-	TicketsServed     int32        `json:"tickets_served"`
-	RegisteredTickets int32        `json:"registered_tickets"`
-	CreatedAt         sql.NullTime `json:"created_at"`
-	UpdatedAt         sql.NullTime `json:"updated_at"`
+	ID                int64     `json:"id"`
+	QueueID           int32     `json:"queue_id"`
+	QueueName         string    `json:"queue_name"`
+	Date              time.Time `json:"date"`
+	TicketsServed     int32     `json:"tickets_served"`
+	RegisteredTickets int32     `json:"registered_tickets"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
