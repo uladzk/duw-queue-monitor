@@ -60,7 +60,7 @@ func (h *DefaultQueueMonitor) CheckAndProcessStatus(ctx context.Context) error {
 	if newState.Name() != prevStateName {
 		h.log.Info("State transition", "from", prevStateName, "to", newState.Name())
 
-		if newState.Name() == "Inactive" && h.statsRepo != nil {
+		if _, isInactive := newState.(*InactiveState); isInactive && h.statsRepo != nil {
 			h.saveDailyStats(ctx, queue)
 		}
 	}
