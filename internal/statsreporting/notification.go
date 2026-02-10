@@ -51,20 +51,20 @@ func buildWeeklyMsg(queueName string, stats []dailystats.QueueDailyStat) string 
 	}
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf(msgWeeklyHeader, queueName))
+	fmt.Fprintf(&sb, msgWeeklyHeader, queueName)
 
 	var totalServed, totalRegistered int32
 	for _, s := range stats {
 		dayAbbr := polishWeekdays[s.Date.Weekday()]
 		dateFmt := s.Date.Format("02.01")
 		sb.WriteString("\n")
-		sb.WriteString(fmt.Sprintf(msgWeeklyDay, dayAbbr, dateFmt, s.TicketsServed, s.RegisteredTickets))
+		fmt.Fprintf(&sb, msgWeeklyDay, dayAbbr, dateFmt, s.TicketsServed, s.RegisteredTickets)
 		totalServed += s.TicketsServed
 		totalRegistered += s.RegisteredTickets
 	}
 
 	sb.WriteString("\n")
-	sb.WriteString(fmt.Sprintf(msgWeeklyTotal, totalServed, totalRegistered))
+	fmt.Fprintf(&sb, msgWeeklyTotal, totalServed, totalRegistered)
 	return sb.String()
 }
 
