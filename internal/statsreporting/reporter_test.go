@@ -65,7 +65,6 @@ func newTestReporter(statsReader StatsReader, sender MessageSender, timeProvider
 
 func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 	// Arrange
-	// "Now" is Wednesday 2025-06-18 10:00 Warsaw → today is 2025-06-18
 	testConditions := []struct {
 		name            string
 		stats           []dailystats.QueueDailyStat
@@ -122,7 +121,6 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 
 func TestSendReport_WhenWeeklyPeriod_SendsCorrectMessage(t *testing.T) {
 	// Arrange
-	// "Now" is Wednesday 2025-06-18 10:00 Warsaw → current week is Mon 2025-06-16 to Wed 2025-06-18
 	testConditions := []struct {
 		name            string
 		stats           []dailystats.QueueDailyStat
