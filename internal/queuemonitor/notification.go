@@ -9,7 +9,7 @@ import (
 const (
 	msgQueueAvailableGeneral = "🔔 Kolejka <b>%s</b> jest teraz dostępna!\n🎟️ Ostatni przywołany bilet: <b>%s</b>\n🧾 Pozostało biletów: <b>%d</b>"
 	msgQueueAvailableShort   = "🔔 Kolejka <b>%s</b> jest teraz dostępna!\n🧾 Pozostało biletów: <b>%d</b>"
-	msgQueueUnavailable      = "💤 Kolejka <b>%s</b> jest obecnie niedostępna."
+	msgQueueUnavailable      = "💤 Kolejka <b>%s</b> jest obecnie niedostępna (na razie nie ma wolnych biletów)."
 	msgQueueInactive         = "🌙 Kolejka <b>%s</b> jest nieaktywna — prawdopodobnie koniec godzin pracy DUW."
 )
 
