@@ -11,22 +11,24 @@ import (
 // DefaultQueueMonitor is responsible for collecting queue status and sending notifications about changes in queue availability.
 // Essentially, it's a state machine which tracks the current state of the DUW queue.
 type DefaultQueueMonitor struct {
-	cfg       *Config
-	log       *logger.Logger
-	collector *StatusCollector
-	notifier  Notifier
-	state     QueueState
-	lastQueue *Queue
-	statsRepo DailyStatsRepository
+	cfg          *Config
+	log          *logger.Logger
+	collector    *StatusCollector
+	notifier     Notifier
+	state        QueueState
+	lastQueue    *Queue
+	statsRepo    DailyStatsRepository
+	timeProvider DateTimeProvider
 }
 
-func NewQueueMonitor(cfg *Config, log *logger.Logger, collector *StatusCollector, notifier Notifier, statsRepo DailyStatsRepository) *DefaultQueueMonitor {
+func NewQueueMonitor(cfg *Config, log *logger.Logger, collector *StatusCollector, notifier Notifier, statsRepo DailyStatsRepository, timeProvider DateTimeProvider) *DefaultQueueMonitor {
 	m := &DefaultQueueMonitor{
-		cfg:       cfg,
-		log:       log,
-		collector: collector,
-		notifier:  notifier,
-		statsRepo: statsRepo,
+		cfg:          cfg,
+		log:          log,
+		collector:    collector,
+		notifier:     notifier,
+		statsRepo:    statsRepo,
+		timeProvider: timeProvider,
 	}
 	m.state = &UninitializedState{notifier: notifier, channelName: cfg.BroadcastChannelName}
 	return m
@@ -73,10 +75,10 @@ func (h *DefaultQueueMonitor) CheckAndProcessStatus(ctx context.Context) error {
 }
 
 func (h *DefaultQueueMonitor) saveDailyStats(ctx context.Context, queue *Queue) {
-	today := time.Now().UTC().Truncate(24 * time.Hour)
+	today := h.timeProvider.Now().UTC().Truncate(24 * time.Hour)
 	if err := h.statsRepo.SaveDailyStats(ctx, queue.ID, queue.Name, today, queue.TicketsServed, queue.RegisteredTickets); err != nil {
 		h.log.Error("Failed to save daily stats", err, "queueId", queue.ID)
 		return
 	}
-	h.log.Info("Daily stats saved", "queueId", queue.ID, "date", today.Format("2006-01-02"))
+	h.log.Info("Daily stats saved", "queueId", queue.ID)
 }

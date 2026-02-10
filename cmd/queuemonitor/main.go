@@ -99,8 +99,9 @@ func buildRunner(log *logger.Logger) (*queuemonitor.Runner, error) {
 		statsRepo = dailystats.NewRepository(db)
 	}
 
-	monitor := queuemonitor.NewQueueMonitor(&cfg, log, collector, notifier, statsRepo)
-	weekdayMonitor := queuemonitor.NewWeekdayQueueMonitor(monitor, queuemonitor.NewSystemDateTimeProvider(), log)
+	timeProvider := queuemonitor.NewSystemDateTimeProvider()
+	monitor := queuemonitor.NewQueueMonitor(&cfg, log, collector, notifier, statsRepo, timeProvider)
+	weekdayMonitor := queuemonitor.NewWeekdayQueueMonitor(monitor, timeProvider, log)
 
 	runner := queuemonitor.NewRunner(&cfg, log, weekdayMonitor, stateRepo)
 	return runner, nil

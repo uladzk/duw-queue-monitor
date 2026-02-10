@@ -74,6 +74,14 @@ func (m *mockDailyStatsRepo) SaveDailyStats(ctx context.Context, queueID int, qu
 	return nil
 }
 
+type mockDateTimeProvider struct {
+	fixedTime time.Time
+}
+
+func (m *mockDateTimeProvider) Now() time.Time {
+	return m.fixedTime
+}
+
 func deriveStateName(active, enabled bool) string {
 	if !active {
 		return "Inactive"
@@ -147,7 +155,7 @@ func TestCheckAndProcessStatus_WhenStateIsNotInitialized_CorrectlyHandlesStateTr
 
 			notifier := &mockNotifier{}
 
-			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			expectedFinalState := &MonitorState{
 				StateName:           deriveStateName(tc.newState.Active, tc.newState.Enabled),
 				QueueActive:         tc.newState.Active,
@@ -283,7 +291,7 @@ func TestCheckAndProcessStatus_WhenStateIsInitialized_CorrectlyHandlesStrateTran
 
 			notifier := &mockNotifier{}
 
-			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			sut.Init(&tc.initialState)
 			expectedFinalState := &MonitorState{
 				StateName:           deriveStateName(tc.newState.Active, tc.newState.Enabled),
@@ -337,7 +345,7 @@ func TestCheckAndProcessStatus_WhenCollectingQueueStatusFailed_DoesNotPushNotifi
 
 	notifier := &mockNotifier{shouldFail: true}
 
-	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{
 		QueueActive:         true,
 		QueueEnabled:        true,
@@ -393,7 +401,7 @@ func TestCheckAndProcessStatus_WhenPushNotificationFailed_ReturnsError(t *testin
 
 	notifier := &mockNotifier{shouldFail: true}
 
-	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{
 		QueueActive:  true,
 		QueueEnabled: true,
@@ -446,7 +454,7 @@ func TestCheckAndProcessStatus_WhenApiReturnsNegativeTicketsLeft_ReturnsErrorAnd
 	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 	notifier := &mockNotifier{}
 
-	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 
 	// Act
 	err := sut.CheckAndProcessStatus(context.Background())
@@ -557,7 +565,7 @@ func TestCheckAndProcessStatus_MessageFormat_CorrectlyFormatsMessages(t *testing
 			logger := logger.NewLogger(&logger.Config{Level: "error"})
 			collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 			notifier := &mockNotifier{}
-			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			if tc.initialState != nil {
 				sut.Init(tc.initialState)
 			}
@@ -592,11 +600,11 @@ func TestCheckAndProcessStatus_WhenTransitionToInactiveWithStatsRepo_SavesDailyS
 		initialState MonitorState
 	}{
 		{
-			"from ActiveEnabled to Inactive",
+			"Condition 1: \"queue was active and enabled, queue becomes inactive, stats repo provided.\" Expected: \"daily stats should be saved.\"",
 			MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10, LastTicketProcessed: "K123"},
 		},
 		{
-			"from ActiveDisabled to Inactive",
+			"Condition 2: \"queue was active and disabled, queue becomes inactive, stats repo provided.\" Expected: \"daily stats should be saved.\"",
 			MonitorState{StateName: "ActiveDisabled", QueueActive: true, QueueEnabled: false, TicketsLeft: 0, LastTicketProcessed: "K123"},
 		},
 	}
@@ -638,7 +646,7 @@ func TestCheckAndProcessStatus_WhenTransitionToInactiveWithStatsRepo_SavesDailyS
 			collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 			notifier := &mockNotifier{}
 			statsRepo := &mockDailyStatsRepo{}
-			sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo)
+			sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 			sut.Init(&tc.initialState)
 
 			// Act
@@ -663,6 +671,11 @@ func TestCheckAndProcessStatus_WhenTransitionToInactiveWithStatsRepo_SavesDailyS
 
 			if statsRepo.lastRegisteredTickets != 50 {
 				t.Errorf("Expected registeredTickets 50, got %d", statsRepo.lastRegisteredTickets)
+			}
+
+			expectedDate := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
+			if statsRepo.lastDate != expectedDate {
+				t.Errorf("Expected date %v, got %v", expectedDate, statsRepo.lastDate)
 			}
 		})
 	}
@@ -704,7 +717,7 @@ func TestCheckAndProcessStatus_WhenNoTransitionToInactive_DoesNotSaveDailyStats(
 	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 	notifier := &mockNotifier{}
 	statsRepo := &mockDailyStatsRepo{}
-	sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10})
 
 	// Act
@@ -753,7 +766,7 @@ func TestCheckAndProcessStatus_WhenStatsRepoIsNil_DoesNotPanicOnInactiveTransiti
 	logger := logger.NewLogger(&logger.Config{Level: "error"})
 	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 	notifier := &mockNotifier{}
-	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, nil, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10})
 
 	// Act
@@ -801,7 +814,7 @@ func TestCheckAndProcessStatus_WhenStatsRepoFails_DoesNotReturnError(t *testing.
 	collector := NewStatusCollector(&cfg.QueueMonitor, &http.Client{}, logger)
 	notifier := &mockNotifier{}
 	statsRepo := &mockDailyStatsRepo{shouldFail: true}
-	sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo)
+	sut := NewQueueMonitor(cfg, logger, collector, notifier, statsRepo, &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC)})
 	sut.Init(&MonitorState{StateName: "ActiveEnabled", QueueActive: true, QueueEnabled: true, TicketsLeft: 10})
 
 	// Act
