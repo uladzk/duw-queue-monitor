@@ -28,17 +28,6 @@ func (r *Repository) SaveDailyStats(ctx context.Context, queueID int, queueName 
 	})
 }
 
-func (r *Repository) GetByDate(ctx context.Context, queueID int, date time.Time) (*QueueDailyStat, error) {
-	result, err := r.queries.GetDailyStatsByDate(ctx, GetDailyStatsByDateParams{
-		QueueID: int32(queueID),
-		Date:    date,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 func (r *Repository) GetByDateRange(ctx context.Context, queueID int, startDate, endDate time.Time) ([]QueueDailyStat, error) {
 	return r.queries.GetStatsByDateRange(ctx, GetStatsByDateRangeParams{
 		QueueID: int32(queueID),

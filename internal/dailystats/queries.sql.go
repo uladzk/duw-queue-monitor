@@ -10,33 +10,6 @@ import (
 	"time"
 )
 
-const getDailyStatsByDate = `-- name: GetDailyStatsByDate :one
-SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
-FROM queue_daily_stats
-WHERE queue_id = $1 AND date = $2
-`
-
-type GetDailyStatsByDateParams struct {
-	QueueID int32     `json:"queue_id"`
-	Date    time.Time `json:"date"`
-}
-
-func (q *Queries) GetDailyStatsByDate(ctx context.Context, arg GetDailyStatsByDateParams) (QueueDailyStat, error) {
-	row := q.db.QueryRowContext(ctx, getDailyStatsByDate, arg.QueueID, arg.Date)
-	var i QueueDailyStat
-	err := row.Scan(
-		&i.ID,
-		&i.QueueID,
-		&i.QueueName,
-		&i.Date,
-		&i.TicketsServed,
-		&i.RegisteredTickets,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const getStatsByDateRange = `-- name: GetStatsByDateRange :many
 SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
 FROM queue_daily_stats

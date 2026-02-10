@@ -8,11 +8,6 @@ DO UPDATE SET
     queue_name = EXCLUDED.queue_name,
     updated_at = NOW();
 
--- name: GetDailyStatsByDate :one
-SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
-FROM queue_daily_stats
-WHERE queue_id = $1 AND date = $2;
-
 -- name: GetStatsByDateRange :many
 SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
 FROM queue_daily_stats
