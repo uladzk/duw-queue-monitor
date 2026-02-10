@@ -28,6 +28,13 @@ spec:
           value: "redis://redis-service:6379/0"
         - name: STATUS_CHECK_INTERVAL_SECONDS
           value: "120"
+        - name: FF_DAILY_STATS_ENABLED
+          value: "true"
+        - name: STATS_POSTGRES_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: postgres-app
+              key: uri
         - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
           valueFrom:
             secretKeyRef:
