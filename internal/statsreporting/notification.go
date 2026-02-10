@@ -17,10 +17,6 @@ type MessageSender interface {
 	SendMessage(ctx context.Context, chatID, text string) error
 }
 
-type DateTimeProvider interface {
-	Now() time.Time
-}
-
 const (
 	msgDailyReport  = "📊 Kolejka <b>%s</b> — podsumowanie dnia:\nObsłużonych klientów: <b>%d</b>\nWydanych biletów: <b>%d</b>"
 	msgDailyNoData  = "📊 Kolejka <b>%s</b> — podsumowanie dnia:\nBrak danych za ten dzień."

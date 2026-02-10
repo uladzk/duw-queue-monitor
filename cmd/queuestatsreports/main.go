@@ -12,7 +12,6 @@ import (
 	"github.com/UladzK/duw-queue-monitor/internal/dailystats"
 	"github.com/UladzK/duw-queue-monitor/internal/logger"
 	"github.com/UladzK/duw-queue-monitor/internal/notifications"
-	"github.com/UladzK/duw-queue-monitor/internal/queuemonitor"
 	"github.com/UladzK/duw-queue-monitor/internal/statsreporting"
 
 	"github.com/caarlos0/env/v11"
@@ -57,7 +56,7 @@ func run(period string) error {
 	httpClient := &http.Client{Timeout: 10 * time.Second}
 	sender := notifications.NewTelegramNotifier(&cfg.NotificationTelegram, log, httpClient)
 	statsReader := dailystats.NewRepository(db)
-	timeProvider := queuemonitor.NewSystemDateTimeProvider()
+	timeProvider := statsreporting.NewSystemDateTimeProvider()
 
 	reporter := statsreporting.NewReporter(&cfg.StatsReporting, log, statsReader, sender, timeProvider)
 

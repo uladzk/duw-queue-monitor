@@ -8,6 +8,10 @@ import (
 	"github.com/UladzK/duw-queue-monitor/internal/logger"
 )
 
+type DateTimeProvider interface {
+	Now() time.Time
+}
+
 type Reporter struct {
 	cfg          *StatsReportingConfig
 	log          *logger.Logger
@@ -50,7 +54,7 @@ func (r *Reporter) sendDailyReport(ctx context.Context) error {
 	}
 
 	msg := buildDailyMsg(r.cfg.QueueName, stats)
-	r.log.Info("Sending daily report", "date", start.Format("2006-01-02"))
+	r.log.Info("Sending daily report", "date", start.Format(time.DateOnly))
 	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
 }
 
@@ -74,7 +78,7 @@ func (r *Reporter) sendWeeklyReport(ctx context.Context) error {
 	}
 
 	msg := buildWeeklyMsg(r.cfg.QueueName, stats)
-	r.log.Info("Sending weekly report", "from", start.Format("2006-01-02"), "to", end.Format("2006-01-02"))
+	r.log.Info("Sending weekly report", "from", start.Format(time.DateOnly), "to", end.Format(time.DateOnly))
 	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
 }
 
@@ -92,7 +96,7 @@ func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
 	}
 
 	msg := buildMonthlyMsg(r.cfg.QueueName, stats)
-	r.log.Info("Sending monthly report", "month", start.Format("2006-01"))
+	r.log.Info("Sending monthly report", "month", start.Format(time.DateOnly))
 	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
 }
 
