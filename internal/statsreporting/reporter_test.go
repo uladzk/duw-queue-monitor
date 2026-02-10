@@ -66,7 +66,7 @@ func newTestReporter(statsReader StatsReader, sender MessageSender, timeProvider
 
 func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 	// Arrange
-	// "Now" is Wednesday 2025-06-18 10:00 Warsaw → yesterday is 2025-06-17
+	// "Now" is Wednesday 2025-06-18 10:00 Warsaw → today is 2025-06-18
 	testConditions := []struct {
 		name            string
 		stats           []dailystats.QueueDailyStat
@@ -75,7 +75,7 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 		{
 			"Condition 1: \"report date has stats data.\" Expected: \"daily report with tickets served and issued should be sent.\"",
 			[]dailystats.QueueDailyStat{
-				{QueueID: 24, Date: time.Date(2025, 6, 17, 0, 0, 0, 0, time.UTC), TicketsServed: 42, RegisteredTickets: 50},
+				{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TicketsServed: 42, RegisteredTickets: 50},
 			},
 			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie dnia:\nObsłużonych klientów: <b>42</b>\nWydanych biletów: <b>50</b>",
 		},
@@ -113,7 +113,7 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 				t.Errorf("Expected message:\n'%s'\nbut got:\n'%s'", tc.expectedMessage, sender.lastSentMessage)
 			}
 
-			expectedDate := time.Date(2025, 6, 17, 0, 0, 0, 0, time.UTC)
+			expectedDate := time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC)
 			if statsReader.lastStartDate != expectedDate {
 				t.Errorf("Expected start date %v, got %v", expectedDate, statsReader.lastStartDate)
 			}
@@ -123,27 +123,27 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 
 func TestSendReport_WhenWeeklyPeriod_SendsCorrectMessage(t *testing.T) {
 	// Arrange
-	// "Now" is Wednesday 2025-06-18 10:00 Warsaw → previous week is Mon 2025-06-09 to Sun 2025-06-15
+	// "Now" is Wednesday 2025-06-18 10:00 Warsaw → current week is Mon 2025-06-16 to Wed 2025-06-18
 	testConditions := []struct {
 		name            string
 		stats           []dailystats.QueueDailyStat
 		expectedMessage string
 	}{
 		{
-			"Condition 1: \"previous week has full stats data.\" Expected: \"weekly report with per-day breakdown and totals should be sent.\"",
+			"Condition 1: \"current week has stats data.\" Expected: \"weekly report with per-day breakdown and totals should be sent.\"",
 			[]dailystats.QueueDailyStat{
-				{QueueID: 24, Date: time.Date(2025, 6, 9, 0, 0, 0, 0, time.UTC), TicketsServed: 40, RegisteredTickets: 45},
-				{QueueID: 24, Date: time.Date(2025, 6, 10, 0, 0, 0, 0, time.UTC), TicketsServed: 38, RegisteredTickets: 42},
-				{QueueID: 24, Date: time.Date(2025, 6, 11, 0, 0, 0, 0, time.UTC), TicketsServed: 35, RegisteredTickets: 40},
+				{QueueID: 24, Date: time.Date(2025, 6, 16, 0, 0, 0, 0, time.UTC), TicketsServed: 40, RegisteredTickets: 45},
+				{QueueID: 24, Date: time.Date(2025, 6, 17, 0, 0, 0, 0, time.UTC), TicketsServed: 38, RegisteredTickets: 42},
+				{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TicketsServed: 35, RegisteredTickets: 40},
 			},
 			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie tygodnia:\n" +
-				"• Pon 09.06 — obsłużono <b>40</b>, wydano <b>45</b> biletów\n" +
-				"• Wt 10.06 — obsłużono <b>38</b>, wydano <b>42</b> biletów\n" +
-				"• Śr 11.06 — obsłużono <b>35</b>, wydano <b>40</b> biletów\n" +
+				"• Pon 16.06 — obsłużono <b>40</b>, wydano <b>45</b> biletów\n" +
+				"• Wt 17.06 — obsłużono <b>38</b>, wydano <b>42</b> biletów\n" +
+				"• Śr 18.06 — obsłużono <b>35</b>, wydano <b>40</b> biletów\n" +
 				"Razem obsłużono: <b>113</b> klientów\nRazem wydano: <b>127</b> biletów",
 		},
 		{
-			"Condition 2: \"previous week has no stats data.\" Expected: \"no data weekly report should be sent.\"",
+			"Condition 2: \"current week has no stats data.\" Expected: \"no data weekly report should be sent.\"",
 			[]dailystats.QueueDailyStat{},
 			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie tygodnia:\nBrak danych za ten tydzień.",
 		},
@@ -172,8 +172,8 @@ func TestSendReport_WhenWeeklyPeriod_SendsCorrectMessage(t *testing.T) {
 				t.Errorf("Expected message:\n'%s'\nbut got:\n'%s'", tc.expectedMessage, sender.lastSentMessage)
 			}
 
-			expectedStart := time.Date(2025, 6, 9, 0, 0, 0, 0, time.UTC)
-			expectedEnd := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
+			expectedStart := time.Date(2025, 6, 16, 0, 0, 0, 0, time.UTC)
+			expectedEnd := time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC)
 			if statsReader.lastStartDate != expectedStart {
 				t.Errorf("Expected start date %v, got %v", expectedStart, statsReader.lastStartDate)
 			}
@@ -186,22 +186,22 @@ func TestSendReport_WhenWeeklyPeriod_SendsCorrectMessage(t *testing.T) {
 
 func TestSendReport_WhenMonthlyPeriod_SendsCorrectMessage(t *testing.T) {
 	// Arrange
-	// "Now" is 2025-06-18 → previous month is May 2025 (01–31)
+	// "Now" is 2025-06-18 → current month is June 2025 (01–18)
 	testConditions := []struct {
 		name            string
 		stats           []dailystats.QueueDailyStat
 		expectedMessage string
 	}{
 		{
-			"Condition 1: \"previous month has stats data.\" Expected: \"monthly report with totals should be sent.\"",
+			"Condition 1: \"current month has stats data.\" Expected: \"monthly report with totals should be sent.\"",
 			[]dailystats.QueueDailyStat{
-				{QueueID: 24, Date: time.Date(2025, 5, 5, 0, 0, 0, 0, time.UTC), TicketsServed: 100, RegisteredTickets: 120},
-				{QueueID: 24, Date: time.Date(2025, 5, 12, 0, 0, 0, 0, time.UTC), TicketsServed: 150, RegisteredTickets: 170},
+				{QueueID: 24, Date: time.Date(2025, 6, 5, 0, 0, 0, 0, time.UTC), TicketsServed: 100, RegisteredTickets: 120},
+				{QueueID: 24, Date: time.Date(2025, 6, 12, 0, 0, 0, 0, time.UTC), TicketsServed: 150, RegisteredTickets: 170},
 			},
 			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie miesiąca:\nŁączna liczba obsłużonych klientów: <b>250</b>\nŁączna liczba wydanych biletów: <b>290</b>",
 		},
 		{
-			"Condition 2: \"previous month has no stats data.\" Expected: \"no data monthly report should be sent.\"",
+			"Condition 2: \"current month has no stats data.\" Expected: \"no data monthly report should be sent.\"",
 			[]dailystats.QueueDailyStat{},
 			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie miesiąca:\nBrak danych za ten miesiąc.",
 		},
@@ -230,8 +230,8 @@ func TestSendReport_WhenMonthlyPeriod_SendsCorrectMessage(t *testing.T) {
 				t.Errorf("Expected message:\n'%s'\nbut got:\n'%s'", tc.expectedMessage, sender.lastSentMessage)
 			}
 
-			expectedStart := time.Date(2025, 5, 1, 0, 0, 0, 0, time.UTC)
-			expectedEnd := time.Date(2025, 5, 31, 0, 0, 0, 0, time.UTC)
+			expectedStart := time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC)
+			expectedEnd := time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC)
 			if statsReader.lastStartDate != expectedStart {
 				t.Errorf("Expected start date %v, got %v", expectedStart, statsReader.lastStartDate)
 			}
@@ -285,7 +285,7 @@ func TestSendReport_WhenStatsReaderFails_ReturnsError(t *testing.T) {
 func TestSendReport_WhenMessageSenderFails_ReturnsError(t *testing.T) {
 	// Arrange
 	statsReader := &mockStatsReader{result: []dailystats.QueueDailyStat{
-		{QueueID: 24, Date: time.Date(2025, 6, 17, 0, 0, 0, 0, time.UTC), TicketsServed: 42, RegisteredTickets: 50},
+		{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TicketsServed: 42, RegisteredTickets: 50},
 	}}
 	sender := &mockMessageSender{shouldFail: true}
 	timeProvider := &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 18, 10, 0, 0, 0, time.UTC)}

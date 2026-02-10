@@ -41,8 +41,8 @@ func (r *Reporter) SendReport(ctx context.Context, period string) error {
 
 func (r *Reporter) sendDailyReport(ctx context.Context) error {
 	loc := r.loadTimezone()
-	yesterday := r.timeProvider.Now().In(loc).AddDate(0, 0, -1)
-	start := time.Date(yesterday.Year(), yesterday.Month(), yesterday.Day(), 0, 0, 0, 0, time.UTC)
+	today := r.timeProvider.Now().In(loc)
+	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
 
 	stats, err := r.statsReader.GetByDateRange(ctx, r.cfg.QueueID, start, start)
 	if err != nil {
@@ -58,16 +58,15 @@ func (r *Reporter) sendWeeklyReport(ctx context.Context) error {
 	loc := r.loadTimezone()
 	now := r.timeProvider.Now().In(loc)
 
-	// Previous week: Monday to Sunday
+	// Current week: Monday to today
 	weekday := now.Weekday()
 	if weekday == time.Sunday {
 		weekday = 7
 	}
-	lastMonday := now.AddDate(0, 0, -int(weekday)-6)
-	lastSunday := lastMonday.AddDate(0, 0, 6)
+	monday := now.AddDate(0, 0, -int(weekday)+1)
 
-	start := time.Date(lastMonday.Year(), lastMonday.Month(), lastMonday.Day(), 0, 0, 0, 0, time.UTC)
-	end := time.Date(lastSunday.Year(), lastSunday.Month(), lastSunday.Day(), 0, 0, 0, 0, time.UTC)
+	start := time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+	end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
 	stats, err := r.statsReader.GetByDateRange(ctx, r.cfg.QueueID, start, end)
 	if err != nil {
@@ -83,13 +82,9 @@ func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
 	loc := r.loadTimezone()
 	now := r.timeProvider.Now().In(loc)
 
-	// Previous month
-	firstOfCurrentMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, loc)
-	firstOfPrevMonth := firstOfCurrentMonth.AddDate(0, -1, 0)
-	lastOfPrevMonth := firstOfCurrentMonth.AddDate(0, 0, -1)
-
-	start := time.Date(firstOfPrevMonth.Year(), firstOfPrevMonth.Month(), firstOfPrevMonth.Day(), 0, 0, 0, 0, time.UTC)
-	end := time.Date(lastOfPrevMonth.Year(), lastOfPrevMonth.Month(), lastOfPrevMonth.Day(), 0, 0, 0, 0, time.UTC)
+	// Current month: 1st to today
+	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	end := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
 
 	stats, err := r.statsReader.GetByDateRange(ctx, r.cfg.QueueID, start, end)
 	if err != nil {
@@ -97,7 +92,7 @@ func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
 	}
 
 	msg := buildMonthlyMsg(r.cfg.QueueName, stats)
-	r.log.Info("Sending monthly report", "month", firstOfPrevMonth.Format("2006-01"))
+	r.log.Info("Sending monthly report", "month", start.Format("2006-01"))
 	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
 }
 
