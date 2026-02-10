@@ -57,7 +57,6 @@ func newTestReporter(statsReader StatsReader, sender MessageSender, timeProvider
 	cfg := &StatsReportingConfig{
 		QueueID:     24,
 		QueueName:   "Odbiór karty pobytu",
-		Timezone:    "Europe/Warsaw",
 		ChannelName: "test-channel",
 	}
 	log := logger.NewLogger(&logger.Config{Level: "error"})

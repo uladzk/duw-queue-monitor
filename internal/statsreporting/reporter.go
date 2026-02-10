@@ -44,8 +44,7 @@ func (r *Reporter) SendReport(ctx context.Context, period string) error {
 }
 
 func (r *Reporter) sendDailyReport(ctx context.Context) error {
-	loc := r.loadTimezone()
-	today := r.timeProvider.Now().In(loc)
+	today := r.timeProvider.Now().UTC()
 	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
 
 	stats, err := r.statsReader.GetByDateRange(ctx, r.cfg.QueueID, start, start)
@@ -59,8 +58,7 @@ func (r *Reporter) sendDailyReport(ctx context.Context) error {
 }
 
 func (r *Reporter) sendWeeklyReport(ctx context.Context) error {
-	loc := r.loadTimezone()
-	now := r.timeProvider.Now().In(loc)
+	now := r.timeProvider.Now().UTC()
 
 	// Current week: Monday to today
 	weekday := now.Weekday()
@@ -83,8 +81,7 @@ func (r *Reporter) sendWeeklyReport(ctx context.Context) error {
 }
 
 func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
-	loc := r.loadTimezone()
-	now := r.timeProvider.Now().In(loc)
+	now := r.timeProvider.Now().UTC()
 
 	// Current month: 1st to today
 	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
@@ -100,11 +97,3 @@ func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
 	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
 }
 
-func (r *Reporter) loadTimezone() *time.Location {
-	loc, err := time.LoadLocation(r.cfg.Timezone)
-	if err != nil {
-		r.log.Warn("Failed to load timezone, falling back to UTC", "timezone", r.cfg.Timezone)
-		return time.UTC
-	}
-	return loc
-}
