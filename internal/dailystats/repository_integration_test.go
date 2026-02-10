@@ -71,11 +71,16 @@ func TestSaveDailyStats_WhenNewRecord_InsertsSuccessfully(t *testing.T) {
 		t.Fatalf("Expected successful insert, but got error: %v", err)
 	}
 
-	result, err := sut.GetByDate(ctx, 24, date)
+	results, err := sut.GetByDateRange(ctx, 24, date, date)
 	if err != nil {
 		t.Fatalf("Expected successful get, but got error: %v", err)
 	}
 
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(results))
+	}
+
+	result := results[0]
 	if result.QueueID != 24 {
 		t.Errorf("Expected QueueID 24, got %d", result.QueueID)
 	}
@@ -113,11 +118,16 @@ func TestSaveDailyStats_WhenRecordExists_UpsertsSuccessfully(t *testing.T) {
 		t.Fatalf("Expected successful upsert, but got error: %v", err)
 	}
 
-	result, err := sut.GetByDate(ctx, 24, date)
+	results, err := sut.GetByDateRange(ctx, 24, date, date)
 	if err != nil {
 		t.Fatalf("Expected successful get, but got error: %v", err)
 	}
 
+	if len(results) != 1 {
+		t.Fatalf("Expected 1 result, got %d", len(results))
+	}
+
+	result := results[0]
 	if result.TicketsServed != 60 {
 		t.Errorf("Expected TicketsServed 60 after upsert, got %d", result.TicketsServed)
 	}

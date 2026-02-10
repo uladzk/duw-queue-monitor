@@ -9,7 +9,6 @@ import (
 )
 
 type Querier interface {
-	GetDailyStatsByDate(ctx context.Context, arg GetDailyStatsByDateParams) (QueueDailyStat, error)
 	GetStatsByDateRange(ctx context.Context, arg GetStatsByDateRangeParams) ([]QueueDailyStat, error)
 	UpsertDailyStats(ctx context.Context, arg UpsertDailyStatsParams) error
 }
