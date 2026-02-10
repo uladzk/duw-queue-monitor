@@ -92,7 +92,7 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 			sut := newTestReporter(statsReader, sender, timeProvider)
 
 			// Act
-			err := sut.SendReport(context.Background(), "daily")
+			err := sut.SendReport(context.Background(), "daily", "test-chat")
 
 			// Assert
 			if err != nil {
@@ -103,8 +103,8 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 				t.Error("Expected SendMessage to be called, but it wasn't")
 			}
 
-			if sender.lastSentChatID != "@test-channel" {
-				t.Errorf("Expected chat ID '@test-channel', got '%s'", sender.lastSentChatID)
+			if sender.lastSentChatID != "test-chat" {
+				t.Errorf("Expected chat ID 'test-chat', got '%s'", sender.lastSentChatID)
 			}
 
 			if sender.lastSentMessage != tc.expectedMessage {
@@ -154,7 +154,7 @@ func TestSendReport_WhenWeeklyPeriod_SendsCorrectMessage(t *testing.T) {
 			sut := newTestReporter(statsReader, sender, timeProvider)
 
 			// Act
-			err := sut.SendReport(context.Background(), "weekly")
+			err := sut.SendReport(context.Background(), "weekly", "test-chat")
 
 			// Assert
 			if err != nil {
@@ -212,7 +212,7 @@ func TestSendReport_WhenMonthlyPeriod_SendsCorrectMessage(t *testing.T) {
 			sut := newTestReporter(statsReader, sender, timeProvider)
 
 			// Act
-			err := sut.SendReport(context.Background(), "monthly")
+			err := sut.SendReport(context.Background(), "monthly", "test-chat")
 
 			// Assert
 			if err != nil {
@@ -247,7 +247,7 @@ func TestSendReport_WhenInvalidPeriod_ReturnsError(t *testing.T) {
 	sut := newTestReporter(statsReader, sender, timeProvider)
 
 	// Act
-	err := sut.SendReport(context.Background(), "yearly")
+	err := sut.SendReport(context.Background(), "yearly", "test-chat")
 
 	// Assert
 	if err == nil {
@@ -267,7 +267,7 @@ func TestSendReport_WhenStatsReaderFails_ReturnsError(t *testing.T) {
 	sut := newTestReporter(statsReader, sender, timeProvider)
 
 	// Act
-	err := sut.SendReport(context.Background(), "daily")
+	err := sut.SendReport(context.Background(), "daily", "test-chat")
 
 	// Assert
 	if err == nil {
@@ -289,7 +289,7 @@ func TestSendReport_WhenMessageSenderFails_ReturnsError(t *testing.T) {
 	sut := newTestReporter(statsReader, sender, timeProvider)
 
 	// Act
-	err := sut.SendReport(context.Background(), "daily")
+	err := sut.SendReport(context.Background(), "daily", "test-chat")
 
 	// Assert
 	if err == nil {

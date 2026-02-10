@@ -60,8 +60,9 @@ func run(period string) error {
 
 	reporter := statsreporting.NewReporter(&cfg.StatsReporting, log, statsReader, sender, timeProvider)
 
-	log.Info("Sending stats report", "period", period)
-	if err := reporter.SendReport(context.Background(), period); err != nil {
+	chatID := fmt.Sprintf("@%s", cfg.StatsReporting.ChannelName)
+	log.Info("Sending stats report", "period", period, "chatID", chatID)
+	if err := reporter.SendReport(context.Background(), period, chatID); err != nil {
 		return fmt.Errorf("failed to send report: %w", err)
 	}
 

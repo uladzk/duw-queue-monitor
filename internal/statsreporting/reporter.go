@@ -30,20 +30,20 @@ func NewReporter(cfg *StatsReportingConfig, log *logger.Logger, statsReader Stat
 	}
 }
 
-func (r *Reporter) SendReport(ctx context.Context, period string) error {
+func (r *Reporter) SendReport(ctx context.Context, period string, chatID string) error {
 	switch period {
 	case "daily":
-		return r.sendDailyReport(ctx)
+		return r.sendDailyReport(ctx, chatID)
 	case "weekly":
-		return r.sendWeeklyReport(ctx)
+		return r.sendWeeklyReport(ctx, chatID)
 	case "monthly":
-		return r.sendMonthlyReport(ctx)
+		return r.sendMonthlyReport(ctx, chatID)
 	default:
 		return fmt.Errorf("invalid report period: %q, expected: daily, weekly, monthly", period)
 	}
 }
 
-func (r *Reporter) sendDailyReport(ctx context.Context) error {
+func (r *Reporter) sendDailyReport(ctx context.Context, chatID string) error {
 	today := r.timeProvider.Now().UTC()
 	start := time.Date(today.Year(), today.Month(), today.Day(), 0, 0, 0, 0, time.UTC)
 
@@ -54,10 +54,10 @@ func (r *Reporter) sendDailyReport(ctx context.Context) error {
 
 	msg := buildDailyMsg(r.cfg.QueueName, stats)
 	r.log.Info("Sending daily report", "date", start.Format(time.DateOnly))
-	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
+	return r.sender.SendMessage(ctx, chatID, msg)
 }
 
-func (r *Reporter) sendWeeklyReport(ctx context.Context) error {
+func (r *Reporter) sendWeeklyReport(ctx context.Context, chatID string) error {
 	now := r.timeProvider.Now().UTC()
 
 	// Current week: Monday to today
@@ -77,10 +77,10 @@ func (r *Reporter) sendWeeklyReport(ctx context.Context) error {
 
 	msg := buildWeeklyMsg(r.cfg.QueueName, stats)
 	r.log.Info("Sending weekly report", "from", start.Format(time.DateOnly), "to", end.Format(time.DateOnly))
-	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
+	return r.sender.SendMessage(ctx, chatID, msg)
 }
 
-func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
+func (r *Reporter) sendMonthlyReport(ctx context.Context, chatID string) error {
 	now := r.timeProvider.Now().UTC()
 
 	// Current month: 1st to today
@@ -94,6 +94,6 @@ func (r *Reporter) sendMonthlyReport(ctx context.Context) error {
 
 	msg := buildMonthlyMsg(r.cfg.QueueName, stats)
 	r.log.Info("Sending monthly report", "month", start.Format(time.DateOnly))
-	return sendReport(ctx, r.sender, r.cfg.ChannelName, msg)
+	return r.sender.SendMessage(ctx, chatID, msg)
 }
 

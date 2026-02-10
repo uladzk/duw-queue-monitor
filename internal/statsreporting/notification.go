@@ -81,10 +81,3 @@ func buildMonthlyMsg(queueName string, stats []dailystats.QueueDailyStat) string
 	return fmt.Sprintf(msgMonthlyReport, queueName, totalServed, totalRegistered)
 }
 
-func sendReport(ctx context.Context, sender MessageSender, channelName, message string) error {
-	chatID := fmt.Sprintf("@%s", channelName)
-	if err := sender.SendMessage(ctx, chatID, message); err != nil {
-		return fmt.Errorf("error sending stats report: %w", err)
-	}
-	return nil
-}
