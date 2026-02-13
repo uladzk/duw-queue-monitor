@@ -4,10 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-DUW Queue Monitor is a notification system that monitors queue status at Dolnośląski Urząd Wojewódzki (DUW) and sends real-time notifications via Telegram when queues become available. The system consists of two main services written in Go:
+DUW Queue Monitor is a notification system that monitors queue status at Dolnośląski Urząd Wojewódzki (DUW) and sends real-time notifications via Telegram when queues become available. The system consists of three services written in Go:
 
 - **queue-monitor**: Periodically checks queue status from the DUW API and sends notifications when status changes
 - **telegram-bot**: Telegram bot interface for user interactions and feedback
+- **queue-stats-reports**: CLI tool that sends daily/weekly/monthly queue statistics reports to Telegram (deployed as K8s CronJobs)
 
 ## Development Commands
 
@@ -26,6 +27,7 @@ go test -v ./internal/queuemonitor
 # Build Docker image for a service
 docker build -t queue-monitor-test:latest -f cmd/queuemonitor/Dockerfile .
 docker build -t telegram-bot-test:latest -f cmd/telegrambot/Dockerfile .
+docker build -t queue-stats-reports-test:latest -f cmd/queuestatsreports/Dockerfile .
 
 # Run Docker container locally (requires environment variables)
 docker run --rm queue-monitor-test:latest
@@ -60,9 +62,15 @@ Example: `build(queue-monitor): add ca certs to image`
 - `Profile` (`internal/telegrambot/profile.go`): Configures bot commands and description
 - Handlers in `internal/telegrambot/handlers/`: Individual command handlers (feedback, start, etc.)
 
+**Queue Stats Reports Service** (`cmd/queuestatsreports/main.go`):
+- `Reporter` (`internal/statsreporting/reporter.go`): Generates formatted daily/weekly/monthly reports
+- `StatsReader` (`internal/dailystats/`): Reads queue statistics from PostgreSQL
+- Invoked with `--period=daily|weekly|monthly` flag
+- Deployed as three K8s CronJobs (daily, weekly, monthly)
+
 **Shared Components**:
 - `Logger` (`internal/logger/`): Structured logging with configurable levels
-- `TelegramNotifier` (`internal/notifications/telegram.go`): Sends Telegram messages, used by both services
+- `TelegramNotifier` (`internal/notifications/telegram.go`): Sends Telegram messages, used by all services
 
 ### Key Architectural Patterns
 
@@ -103,6 +111,8 @@ This allows the monitor to resume from where it left off after restarts and avoi
   - `queue-monitor-deployment.yml`: Production deployment
   - `queue-monitor-deployment-dev.yml`: Development deployment
   - `telegram-bot-deployment.yml`: Bot deployment (same for dev/prd)
+  - `queue-stats-reports-cronjob.yml`: CronJob definitions (daily/weekly/monthly)
+  - `queue-stats-reports-external-secret.yml`: Telegram secrets for reports service
   - External secrets for sensitive configuration
 
 - `infra/terraform/`: Terraform infrastructure as code
@@ -131,9 +141,24 @@ Images are stored in Azure Container Registry:
 
 **Publish Workflow** (`.github/workflows/publish.yml`):
 - Manually triggered via workflow_dispatch
-- Inputs: service name (queue-monitor/telegram-bot), semantic version
+- Inputs: service name (queue-monitor/telegram-bot/queue-stats-reports/duw-migrations), semantic version
 - Builds and pushes Docker image to ACR
 - Creates git tag: `{service}-{version}`
+
+### Queue Stats Reports Operations
+
+```bash
+# Manual trigger for testing
+kubectl create job --from=cronjob/queue-stats-reports-daily test-daily-run
+kubectl create job --from=cronjob/queue-stats-reports-weekly test-weekly-run
+
+# Unsuspend weekly/monthly reports when ready
+kubectl patch cronjob queue-stats-reports-weekly -p '{"spec":{"suspend":false}}'
+kubectl patch cronjob queue-stats-reports-monthly -p '{"spec":{"suspend":false}}'
+
+# Check CronJob status
+kubectl get cronjobs | grep queue-stats-reports
+```
 
 ## Testing
 
