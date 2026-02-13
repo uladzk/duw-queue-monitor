@@ -118,6 +118,8 @@ spec:
               command: ["/bin/sh", "-c"]
               args: ["[ $(date -d @$(($(date +%s) + 86400)) +%d) = '01' ] && exec ./queuestatsreports --period=monthly || echo 'Not last day of month, skipping'"]
               env:
+                - name: TZ
+                  value: "Europe/Warsaw"
                 - name: LOG_LEVEL
                   value: "info"
                 - name: STATS_POSTGRES_CONNECTION_STRING
