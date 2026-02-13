@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: duw-migrations-${VERSION}
+  name: duw-migrations-1-0-0
   namespace: default
 spec:
   ttlSecondsAfterFinished: 86400
@@ -11,14 +11,14 @@ spec:
       restartPolicy: Never
       containers:
         - name: migrations
-          image: acrduwshared.azurecr.io/duw-migrations:${VERSION}
+          image: acrduwshared.azurecr.io/duw-migrations:1.0.0
           env:
             - name: GOOSE_DRIVER
               value: "postgres"
             - name: GOOSE_DBSTRING
               valueFrom:
                 secretKeyRef:
-                  name: postgres-app
+                  name: postgres-app-duw-stats
                   key: uri
             - name: GOOSE_COMMAND
               value: "up"

@@ -33,7 +33,7 @@ spec:
         - name: STATS_POSTGRES_CONNECTION_STRING
           valueFrom:
             secretKeyRef:
-              name: postgres-app
+              name: postgres-app-duw-stats
               key: uri
         - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
           valueFrom:
