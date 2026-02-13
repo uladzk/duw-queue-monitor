@@ -1,0 +1,143 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: queue-stats-reports-daily
+spec:
+  schedule: "0 18 * * 1-5"
+  timeZone: "Europe/Warsaw"
+  suspend: false
+  startingDeadlineSeconds: 600
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: queue-stats-reports
+              image: acrduwshared.azurecr.io/queue-stats-reports:1.0.0
+              args: ["--period=daily"]
+              env:
+                - name: LOG_LEVEL
+                  value: "info"
+                - name: STATS_POSTGRES_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-app
+                      key: uri
+                - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: queue-stats-reports-external-secret
+                      key: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                - name: NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: queue-stats-reports-external-secret
+                      key: NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: queue-stats-reports-weekly
+spec:
+  schedule: "30 18 * * 5"
+  timeZone: "Europe/Warsaw"
+  suspend: true
+  startingDeadlineSeconds: 600
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: queue-stats-reports
+              image: acrduwshared.azurecr.io/queue-stats-reports:1.0.0
+              args: ["--period=weekly"]
+              env:
+                - name: LOG_LEVEL
+                  value: "info"
+                - name: STATS_POSTGRES_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-app
+                      key: uri
+                - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: queue-stats-reports-external-secret
+                      key: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                - name: NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: queue-stats-reports-external-secret
+                      key: NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: queue-stats-reports-monthly
+spec:
+  schedule: "0 19 1 * *"
+  timeZone: "Europe/Warsaw"
+  suspend: true
+  startingDeadlineSeconds: 600
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: queue-stats-reports
+              image: acrduwshared.azurecr.io/queue-stats-reports:1.0.0
+              args: ["--period=monthly"]
+              env:
+                - name: LOG_LEVEL
+                  value: "info"
+                - name: STATS_POSTGRES_CONNECTION_STRING
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-app
+                      key: uri
+                - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: queue-stats-reports-external-secret
+                      key: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                - name: NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME
+                  valueFrom:
+                    secretKeyRef:
+                      name: queue-stats-reports-external-secret
+                      key: NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
