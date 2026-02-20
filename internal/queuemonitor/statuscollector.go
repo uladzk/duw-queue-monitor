@@ -33,7 +33,6 @@ type Queue struct {
 	Active            bool   `json:"active"`
 	TicketValue       string `json:"ticket_value"`
 	TicketsLeft       int    `json:"tickets_left"`
-	TicketsServed     int    `json:"tickets_served"`
 	RegisteredTickets int    `json:"registered_tickets"`
 	MaxTickets        int    `json:"max_tickets"`
 }

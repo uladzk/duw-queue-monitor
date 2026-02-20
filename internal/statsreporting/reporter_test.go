@@ -71,11 +71,11 @@ func TestSendReport_WhenDailyPeriod_SendsCorrectMessage(t *testing.T) {
 		expectedMessage string
 	}{
 		{
-			"Condition 1: \"report date has stats data.\" Expected: \"daily report with tickets served and issued should be sent.\"",
+			"Condition 1: \"report date has stats data.\" Expected: \"daily report with total available and registered tickets should be sent.\"",
 			[]dailystats.QueueDailyStat{
-				{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 42, RegisteredTickets: 50},
+				{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 180, RegisteredTickets: 163},
 			},
-			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie dnia:\nWydanych biletów: <b>42</b>\nPobranych biletów: <b>50</b>",
+			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie dnia:\nWydanych biletów: <b>180</b>\nPobranych biletów: <b>163</b>",
 		},
 		{
 			"Condition 2: \"report date has no stats data.\" Expected: \"no data daily report should be sent.\"",
@@ -129,15 +129,15 @@ func TestSendReport_WhenWeeklyPeriod_SendsCorrectMessage(t *testing.T) {
 		{
 			"Condition 1: \"current week has stats data.\" Expected: \"weekly report with per-day breakdown and totals should be sent.\"",
 			[]dailystats.QueueDailyStat{
-				{QueueID: 24, Date: time.Date(2025, 6, 16, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 40, RegisteredTickets: 45},
-				{QueueID: 24, Date: time.Date(2025, 6, 17, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 38, RegisteredTickets: 42},
-				{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 35, RegisteredTickets: 40},
+				{QueueID: 24, Date: time.Date(2025, 6, 16, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 180, RegisteredTickets: 165},
+				{QueueID: 24, Date: time.Date(2025, 6, 17, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 175, RegisteredTickets: 160},
+				{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 180, RegisteredTickets: 163},
 			},
 			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie tygodnia:\n" +
-				"• Pon 16.06 — wydano <b>40</b>, pobrano <b>45</b> biletów\n" +
-				"• Wt 17.06 — wydano <b>38</b>, pobrano <b>42</b> biletów\n" +
-				"• Śr 18.06 — wydano <b>35</b>, pobrano <b>40</b> biletów\n" +
-				"Razem wydano: <b>113</b> biletów\nRazem pobrano: <b>127</b> biletów",
+				"• Pon 16.06 — wydano <b>180</b>, pobrano <b>165</b> biletów\n" +
+				"• Wt 17.06 — wydano <b>175</b>, pobrano <b>160</b> biletów\n" +
+				"• Śr 18.06 — wydano <b>180</b>, pobrano <b>163</b> biletów\n" +
+				"Razem wydano: <b>535</b> biletów\nRazem pobrano: <b>488</b> biletów",
 		},
 		{
 			"Condition 2: \"current week has no stats data.\" Expected: \"no data weekly report should be sent.\"",
@@ -192,10 +192,10 @@ func TestSendReport_WhenMonthlyPeriod_SendsCorrectMessage(t *testing.T) {
 		{
 			"Condition 1: \"current month has stats data.\" Expected: \"monthly report with totals should be sent.\"",
 			[]dailystats.QueueDailyStat{
-				{QueueID: 24, Date: time.Date(2025, 6, 5, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 100, RegisteredTickets: 120},
-				{QueueID: 24, Date: time.Date(2025, 6, 12, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 150, RegisteredTickets: 170},
+				{QueueID: 24, Date: time.Date(2025, 6, 5, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 200, RegisteredTickets: 170},
+				{QueueID: 24, Date: time.Date(2025, 6, 12, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 200, RegisteredTickets: 185},
 			},
-			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie miesiąca:\nŁączna liczba wydanych biletów: <b>250</b>\nŁączna liczba pobranych biletów: <b>290</b>",
+			"📊 Kolejka <b>Odbiór karty pobytu</b> — podsumowanie miesiąca:\nŁączna liczba wydanych biletów: <b>400</b>\nŁączna liczba pobranych biletów: <b>355</b>",
 		},
 		{
 			"Condition 2: \"current month has no stats data.\" Expected: \"no data monthly report should be sent.\"",
@@ -282,7 +282,7 @@ func TestSendReport_WhenStatsReaderFails_ReturnsError(t *testing.T) {
 func TestSendReport_WhenMessageSenderFails_ReturnsError(t *testing.T) {
 	// Arrange
 	statsReader := &mockStatsReader{result: []dailystats.QueueDailyStat{
-		{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 42, RegisteredTickets: 50},
+		{QueueID: 24, Date: time.Date(2025, 6, 18, 0, 0, 0, 0, time.UTC), TotalTicketsAvailable: 180, RegisteredTickets: 163},
 	}}
 	sender := &mockMessageSender{shouldFail: true}
 	timeProvider := &mockDateTimeProvider{fixedTime: time.Date(2025, 6, 18, 10, 0, 0, 0, time.UTC)}
