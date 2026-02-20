@@ -29,12 +29,12 @@ type Response struct {
 type Queue struct {
 	ID                int    `json:"id"`
 	Name              string `json:"name"`
-	Enabled           bool   `json:"enabled"`
-	Active            bool   `json:"active"`
-	TicketValue       string `json:"ticket_value"`
-	TicketsLeft       int    `json:"tickets_left"`
-	RegisteredTickets int    `json:"registered_tickets"`
-	MaxTickets        int    `json:"max_tickets"`
+	Enabled           bool   `json:"enabled"`           // whether the queue accepts new registrations
+	Active            bool   `json:"active"`             // whether the queue is operating today
+	TicketValue       string `json:"ticket_value"`       // current ticket number being served (string, not int)
+	TicketsLeft       int    `json:"tickets_left"`       // tickets still available for registration
+	RegisteredTickets int    `json:"registered_tickets"` // tickets taken by people
+	MaxTickets        int    `json:"max_tickets"`        // total ticket capacity issued for the day
 }
 
 func NewStatusCollector(cfg *QueueMonitorConfig, httpClient *http.Client, log *logger.Logger) *StatusCollector {
