@@ -76,7 +76,7 @@ func (h *DefaultQueueMonitor) CheckAndProcessStatus(ctx context.Context) error {
 
 func (h *DefaultQueueMonitor) saveDailyStats(ctx context.Context, queue *Queue) {
 	today := h.timeProvider.Now().UTC().Truncate(24 * time.Hour)
-	if err := h.statsRepo.SaveDailyStats(ctx, queue.ID, queue.Name, today, queue.TicketsServed, queue.RegisteredTickets); err != nil {
+	if err := h.statsRepo.SaveDailyStats(ctx, queue.ID, queue.Name, today, queue.MaxTickets, queue.RegisteredTickets); err != nil {
 		h.log.Error("Failed to save daily stats", err, "queueId", queue.ID)
 		return
 	}
