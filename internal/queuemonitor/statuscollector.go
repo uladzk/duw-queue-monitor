@@ -35,6 +35,7 @@ type Queue struct {
 	TicketsLeft       int    `json:"tickets_left"`
 	TicketsServed     int    `json:"tickets_served"`
 	RegisteredTickets int    `json:"registered_tickets"`
+	MaxTickets        int    `json:"max_tickets"`
 }
 
 func NewStatusCollector(cfg *QueueMonitorConfig, httpClient *http.Client, log *logger.Logger) *StatusCollector {
