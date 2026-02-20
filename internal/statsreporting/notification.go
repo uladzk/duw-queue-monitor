@@ -42,7 +42,7 @@ func buildDailyMsg(queueName string, stats []dailystats.QueueDailyStat) string {
 	if len(stats) == 0 {
 		return fmt.Sprintf(msgDailyNoData, queueName)
 	}
-	return fmt.Sprintf(msgDailyReport, queueName, stats[0].TotalTicketsAvailable, stats[0].RegisteredTickets)
+	return fmt.Sprintf(msgDailyReport, queueName, stats[0].TotalTicketsAvailable, stats[0].TakenTickets)
 }
 
 func buildWeeklyMsg(queueName string, stats []dailystats.QueueDailyStat) string {
@@ -53,18 +53,18 @@ func buildWeeklyMsg(queueName string, stats []dailystats.QueueDailyStat) string 
 	var sb strings.Builder
 	fmt.Fprintf(&sb, msgWeeklyHeader, queueName)
 
-	var totalAvailable, totalRegistered int32
+	var totalAvailable, totalTaken int32
 	for _, s := range stats {
 		dayAbbr := polishWeekdays[s.Date.Weekday()]
 		dateFmt := s.Date.Format("02.01")
 		sb.WriteString("\n")
-		fmt.Fprintf(&sb, msgWeeklyDay, dayAbbr, dateFmt, s.TotalTicketsAvailable, s.RegisteredTickets)
+		fmt.Fprintf(&sb, msgWeeklyDay, dayAbbr, dateFmt, s.TotalTicketsAvailable, s.TakenTickets)
 		totalAvailable += s.TotalTicketsAvailable
-		totalRegistered += s.RegisteredTickets
+		totalTaken += s.TakenTickets
 	}
 
 	sb.WriteString("\n")
-	fmt.Fprintf(&sb, msgWeeklyTotal, totalAvailable, totalRegistered)
+	fmt.Fprintf(&sb, msgWeeklyTotal, totalAvailable, totalTaken)
 	return sb.String()
 }
 
@@ -73,11 +73,11 @@ func buildMonthlyMsg(queueName string, stats []dailystats.QueueDailyStat) string
 		return fmt.Sprintf(msgMonthlyNoData, queueName)
 	}
 
-	var totalAvailable, totalRegistered int32
+	var totalAvailable, totalTaken int32
 	for _, s := range stats {
 		totalAvailable += s.TotalTicketsAvailable
-		totalRegistered += s.RegisteredTickets
+		totalTaken += s.TakenTickets
 	}
-	return fmt.Sprintf(msgMonthlyReport, queueName, totalAvailable, totalRegistered)
+	return fmt.Sprintf(msgMonthlyReport, queueName, totalAvailable, totalTaken)
 }
 

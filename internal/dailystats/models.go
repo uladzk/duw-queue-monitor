@@ -14,7 +14,7 @@ type QueueDailyStat struct {
 	QueueName             string    `json:"queue_name"`
 	Date                  time.Time `json:"date"`
 	TotalTicketsAvailable int32     `json:"total_tickets_available"`
-	RegisteredTickets     int32     `json:"registered_tickets"`
+	TakenTickets          int32     `json:"taken_tickets"`
 	CreatedAt             time.Time `json:"created_at"`
 	UpdatedAt             time.Time `json:"updated_at"`
 }

@@ -90,8 +90,8 @@ func TestSaveDailyStats_WhenNewRecord_InsertsSuccessfully(t *testing.T) {
 	if result.TotalTicketsAvailable != 180 {
 		t.Errorf("Expected TotalTicketsAvailable 180, got %d", result.TotalTicketsAvailable)
 	}
-	if result.RegisteredTickets != 163 {
-		t.Errorf("Expected RegisteredTickets 163, got %d", result.RegisteredTickets)
+	if result.TakenTickets != 163 {
+		t.Errorf("Expected TakenTickets 163, got %d", result.TakenTickets)
 	}
 }
 
@@ -131,8 +131,8 @@ func TestSaveDailyStats_WhenRecordExists_UpsertsSuccessfully(t *testing.T) {
 	if result.TotalTicketsAvailable != 200 {
 		t.Errorf("Expected TotalTicketsAvailable 200 after upsert, got %d", result.TotalTicketsAvailable)
 	}
-	if result.RegisteredTickets != 185 {
-		t.Errorf("Expected RegisteredTickets 185 after upsert, got %d", result.RegisteredTickets)
+	if result.TakenTickets != 185 {
+		t.Errorf("Expected TakenTickets 185 after upsert, got %d", result.TakenTickets)
 	}
 }
 
