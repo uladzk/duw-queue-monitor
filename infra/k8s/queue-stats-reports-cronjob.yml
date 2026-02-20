@@ -51,7 +51,7 @@ kind: CronJob
 metadata:
   name: queue-stats-reports-weekly
 spec:
-  schedule: "30 18 * * 5"
+  schedule: "5 18 * * 5"
   timeZone: "Europe/Warsaw"
   suspend: true
   startingDeadlineSeconds: 600
@@ -99,7 +99,7 @@ kind: CronJob
 metadata:
   name: queue-stats-reports-monthly
 spec:
-  schedule: "0 19 28-31 * *"
+  schedule: "10 18 28-31 * *"
   timeZone: "Europe/Warsaw"
   suspend: true
   startingDeadlineSeconds: 600
