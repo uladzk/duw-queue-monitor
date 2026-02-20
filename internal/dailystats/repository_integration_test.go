@@ -145,20 +145,24 @@ func TestGetByDateRange_WhenMultipleRecords_ReturnsInDateOrder(t *testing.T) {
 
 	sut := NewRepository(db)
 
-	dates := []time.Time{
-		time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC),
-		time.Date(2026, 2, 11, 0, 0, 0, 0, time.UTC),
-		time.Date(2026, 2, 12, 0, 0, 0, 0, time.UTC),
+	testData := []struct {
+		date      time.Time
+		available int
+		taken     int
+	}{
+		{time.Date(2026, 2, 10, 0, 0, 0, 0, time.UTC), 180, 163},
+		{time.Date(2026, 2, 11, 0, 0, 0, 0, time.UTC), 230, 213},
+		{time.Date(2026, 2, 12, 0, 0, 0, 0, time.UTC), 280, 263},
 	}
 
-	for i, date := range dates {
-		if err := sut.SaveDailyStats(ctx, 24, "Odbior karty", date, (i+1)*50+130, (i+1)*50+113); err != nil {
-			t.Fatalf("Failed to insert record for date %v: %v", date, err)
+	for _, td := range testData {
+		if err := sut.SaveDailyStats(ctx, 24, "Odbior karty", td.date, td.available, td.taken); err != nil {
+			t.Fatalf("Failed to insert record for date %v: %v", td.date, err)
 		}
 	}
 
 	// Act
-	results, err := sut.GetByDateRange(ctx, 24, dates[0], dates[2])
+	results, err := sut.GetByDateRange(ctx, 24, testData[0].date, testData[2].date)
 
 	// Assert
 	if err != nil {
@@ -170,16 +174,14 @@ func TestGetByDateRange_WhenMultipleRecords_ReturnsInDateOrder(t *testing.T) {
 	}
 
 	for i, result := range results {
-		expectedAvailable := int32((i+1)*50 + 130)
-		expectedTaken := int32((i+1)*50 + 113)
-		if result.TotalTicketsAvailable != expectedAvailable {
-			t.Errorf("Result %d: expected TotalTicketsAvailable %d, got %d", i, expectedAvailable, result.TotalTicketsAvailable)
+		if result.TotalTicketsAvailable != int32(testData[i].available) {
+			t.Errorf("Result %d: expected TotalTicketsAvailable %d, got %d", i, testData[i].available, result.TotalTicketsAvailable)
 		}
-		if result.TakenTickets != expectedTaken {
-			t.Errorf("Result %d: expected TakenTickets %d, got %d", i, expectedTaken, result.TakenTickets)
+		if result.TakenTickets != int32(testData[i].taken) {
+			t.Errorf("Result %d: expected TakenTickets %d, got %d", i, testData[i].taken, result.TakenTickets)
 		}
-		if !result.Date.Equal(dates[i]) {
-			t.Errorf("Result %d: expected date %v, got %v", i, dates[i], result.Date)
+		if !result.Date.Equal(testData[i].date) {
+			t.Errorf("Result %d: expected date %v, got %v", i, testData[i].date, result.Date)
 		}
 	}
 }
