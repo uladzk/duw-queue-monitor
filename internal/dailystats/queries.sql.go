@@ -11,7 +11,7 @@ import (
 )
 
 const getStatsByDateRange = `-- name: GetStatsByDateRange :many
-SELECT id, queue_id, queue_name, date, tickets_served, registered_tickets, created_at, updated_at
+SELECT id, queue_id, queue_name, date, total_tickets_available, registered_tickets, created_at, updated_at
 FROM queue_daily_stats
 WHERE queue_id = $1 AND date BETWEEN $2 AND $3
 ORDER BY date ASC
@@ -37,7 +37,7 @@ func (q *Queries) GetStatsByDateRange(ctx context.Context, arg GetStatsByDateRan
 			&i.QueueID,
 			&i.QueueName,
 			&i.Date,
-			&i.TicketsServed,
+			&i.TotalTicketsAvailable,
 			&i.RegisteredTickets,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -56,22 +56,22 @@ func (q *Queries) GetStatsByDateRange(ctx context.Context, arg GetStatsByDateRan
 }
 
 const upsertDailyStats = `-- name: UpsertDailyStats :exec
-INSERT INTO queue_daily_stats (queue_id, queue_name, date, tickets_served, registered_tickets, updated_at)
+INSERT INTO queue_daily_stats (queue_id, queue_name, date, total_tickets_available, registered_tickets, updated_at)
 VALUES ($1, $2, $3, $4, $5, NOW())
 ON CONFLICT (queue_id, date)
 DO UPDATE SET
-    tickets_served = EXCLUDED.tickets_served,
+    total_tickets_available = EXCLUDED.total_tickets_available,
     registered_tickets = EXCLUDED.registered_tickets,
     queue_name = EXCLUDED.queue_name,
     updated_at = NOW()
 `
 
 type UpsertDailyStatsParams struct {
-	QueueID           int32     `json:"queue_id"`
-	QueueName         string    `json:"queue_name"`
-	Date              time.Time `json:"date"`
-	TicketsServed     int32     `json:"tickets_served"`
-	RegisteredTickets int32     `json:"registered_tickets"`
+	QueueID               int32     `json:"queue_id"`
+	QueueName             string    `json:"queue_name"`
+	Date                  time.Time `json:"date"`
+	TotalTicketsAvailable int32     `json:"total_tickets_available"`
+	RegisteredTickets     int32     `json:"registered_tickets"`
 }
 
 func (q *Queries) UpsertDailyStats(ctx context.Context, arg UpsertDailyStatsParams) error {
@@ -79,7 +79,7 @@ func (q *Queries) UpsertDailyStats(ctx context.Context, arg UpsertDailyStatsPara
 		arg.QueueID,
 		arg.QueueName,
 		arg.Date,
-		arg.TicketsServed,
+		arg.TotalTicketsAvailable,
 		arg.RegisteredTickets,
 	)
 	return err

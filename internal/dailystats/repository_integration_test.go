@@ -87,8 +87,8 @@ func TestSaveDailyStats_WhenNewRecord_InsertsSuccessfully(t *testing.T) {
 	if result.QueueName != "Odbior karty" {
 		t.Errorf("Expected QueueName 'Odbior karty', got '%s'", result.QueueName)
 	}
-	if result.TicketsServed != 42 {
-		t.Errorf("Expected TicketsServed 42, got %d", result.TicketsServed)
+	if result.TotalTicketsAvailable != 42 {
+		t.Errorf("Expected TotalTicketsAvailable 42, got %d", result.TotalTicketsAvailable)
 	}
 	if result.RegisteredTickets != 50 {
 		t.Errorf("Expected RegisteredTickets 50, got %d", result.RegisteredTickets)
@@ -128,8 +128,8 @@ func TestSaveDailyStats_WhenRecordExists_UpsertsSuccessfully(t *testing.T) {
 	}
 
 	result := results[0]
-	if result.TicketsServed != 60 {
-		t.Errorf("Expected TicketsServed 60 after upsert, got %d", result.TicketsServed)
+	if result.TotalTicketsAvailable != 60 {
+		t.Errorf("Expected TotalTicketsAvailable 60 after upsert, got %d", result.TotalTicketsAvailable)
 	}
 	if result.RegisteredTickets != 70 {
 		t.Errorf("Expected RegisteredTickets 70 after upsert, got %d", result.RegisteredTickets)
@@ -171,8 +171,8 @@ func TestGetByDateRange_WhenMultipleRecords_ReturnsInDateOrder(t *testing.T) {
 
 	for i, result := range results {
 		expectedServed := int32((i + 1) * 10)
-		if result.TicketsServed != expectedServed {
-			t.Errorf("Result %d: expected TicketsServed %d, got %d", i, expectedServed, result.TicketsServed)
+		if result.TotalTicketsAvailable != expectedServed {
+			t.Errorf("Result %d: expected TotalTicketsAvailable %d, got %d", i, expectedServed, result.TotalTicketsAvailable)
 		}
 		if !result.Date.Equal(dates[i]) {
 			t.Errorf("Result %d: expected date %v, got %v", i, dates[i], result.Date)

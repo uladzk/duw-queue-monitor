@@ -18,13 +18,13 @@ type MessageSender interface {
 }
 
 const (
-	msgDailyReport  = "📊 Kolejka <b>%s</b> — podsumowanie dnia:\nObsłużonych klientów: <b>%d</b>\nWydanych biletów: <b>%d</b>"
-	msgDailyNoData  = "📊 Kolejka <b>%s</b> — podsumowanie dnia:\nBrak danych za ten dzień."
-	msgWeeklyHeader = "📊 Kolejka <b>%s</b> — podsumowanie tygodnia:"
-	msgWeeklyDay    = "• %s %s — obsłużono <b>%d</b>, wydano <b>%d</b> biletów"
-	msgWeeklyTotal  = "Razem obsłużono: <b>%d</b> klientów\nRazem wydano: <b>%d</b> biletów"
-	msgWeeklyNoData = "📊 Kolejka <b>%s</b> — podsumowanie tygodnia:\nBrak danych za ten tydzień."
-	msgMonthlyReport = "📊 Kolejka <b>%s</b> — podsumowanie miesiąca:\nŁączna liczba obsłużonych klientów: <b>%d</b>\nŁączna liczba wydanych biletów: <b>%d</b>"
+	msgDailyReport   = "📊 Kolejka <b>%s</b> — podsumowanie dnia:\nWydanych biletów: <b>%d</b>\nPobranych biletów: <b>%d</b>"
+	msgDailyNoData   = "📊 Kolejka <b>%s</b> — podsumowanie dnia:\nBrak danych za ten dzień."
+	msgWeeklyHeader  = "📊 Kolejka <b>%s</b> — podsumowanie tygodnia:"
+	msgWeeklyDay     = "• %s %s — wydano <b>%d</b>, pobrano <b>%d</b> biletów"
+	msgWeeklyTotal   = "Razem wydano: <b>%d</b> biletów\nRazem pobrano: <b>%d</b> biletów"
+	msgWeeklyNoData  = "📊 Kolejka <b>%s</b> — podsumowanie tygodnia:\nBrak danych za ten tydzień."
+	msgMonthlyReport = "📊 Kolejka <b>%s</b> — podsumowanie miesiąca:\nŁączna liczba wydanych biletów: <b>%d</b>\nŁączna liczba pobranych biletów: <b>%d</b>"
 	msgMonthlyNoData = "📊 Kolejka <b>%s</b> — podsumowanie miesiąca:\nBrak danych za ten miesiąc."
 )
 
@@ -42,7 +42,7 @@ func buildDailyMsg(queueName string, stats []dailystats.QueueDailyStat) string {
 	if len(stats) == 0 {
 		return fmt.Sprintf(msgDailyNoData, queueName)
 	}
-	return fmt.Sprintf(msgDailyReport, queueName, stats[0].TicketsServed, stats[0].RegisteredTickets)
+	return fmt.Sprintf(msgDailyReport, queueName, stats[0].TotalTicketsAvailable, stats[0].RegisteredTickets)
 }
 
 func buildWeeklyMsg(queueName string, stats []dailystats.QueueDailyStat) string {
@@ -53,18 +53,18 @@ func buildWeeklyMsg(queueName string, stats []dailystats.QueueDailyStat) string 
 	var sb strings.Builder
 	fmt.Fprintf(&sb, msgWeeklyHeader, queueName)
 
-	var totalServed, totalRegistered int32
+	var totalAvailable, totalRegistered int32
 	for _, s := range stats {
 		dayAbbr := polishWeekdays[s.Date.Weekday()]
 		dateFmt := s.Date.Format("02.01")
 		sb.WriteString("\n")
-		fmt.Fprintf(&sb, msgWeeklyDay, dayAbbr, dateFmt, s.TicketsServed, s.RegisteredTickets)
-		totalServed += s.TicketsServed
+		fmt.Fprintf(&sb, msgWeeklyDay, dayAbbr, dateFmt, s.TotalTicketsAvailable, s.RegisteredTickets)
+		totalAvailable += s.TotalTicketsAvailable
 		totalRegistered += s.RegisteredTickets
 	}
 
 	sb.WriteString("\n")
-	fmt.Fprintf(&sb, msgWeeklyTotal, totalServed, totalRegistered)
+	fmt.Fprintf(&sb, msgWeeklyTotal, totalAvailable, totalRegistered)
 	return sb.String()
 }
 
@@ -73,11 +73,11 @@ func buildMonthlyMsg(queueName string, stats []dailystats.QueueDailyStat) string
 		return fmt.Sprintf(msgMonthlyNoData, queueName)
 	}
 
-	var totalServed, totalRegistered int32
+	var totalAvailable, totalRegistered int32
 	for _, s := range stats {
-		totalServed += s.TicketsServed
+		totalAvailable += s.TotalTicketsAvailable
 		totalRegistered += s.RegisteredTickets
 	}
-	return fmt.Sprintf(msgMonthlyReport, queueName, totalServed, totalRegistered)
+	return fmt.Sprintf(msgMonthlyReport, queueName, totalAvailable, totalRegistered)
 }
 
