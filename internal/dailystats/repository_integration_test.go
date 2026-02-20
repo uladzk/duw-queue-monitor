@@ -171,8 +171,12 @@ func TestGetByDateRange_WhenMultipleRecords_ReturnsInDateOrder(t *testing.T) {
 
 	for i, result := range results {
 		expectedAvailable := int32((i+1)*50 + 130)
+		expectedTaken := int32((i+1)*50 + 113)
 		if result.TotalTicketsAvailable != expectedAvailable {
 			t.Errorf("Result %d: expected TotalTicketsAvailable %d, got %d", i, expectedAvailable, result.TotalTicketsAvailable)
+		}
+		if result.TakenTickets != expectedTaken {
+			t.Errorf("Result %d: expected TakenTickets %d, got %d", i, expectedTaken, result.TakenTickets)
 		}
 		if !result.Date.Equal(dates[i]) {
 			t.Errorf("Result %d: expected date %v, got %v", i, dates[i], result.Date)
