@@ -52,22 +52,22 @@ func (f *mockNotifier) SendMessage(ctx context.Context, chatID, text string) err
 }
 
 type mockDailyStatsRepo struct {
-	saveCalled            bool
-	lastQueueID           int
-	lastQueueName         string
-	lastDate              time.Time
-	lastTicketsServed     int
-	lastRegisteredTickets int
-	shouldFail            bool
+	saveCalled                 bool
+	lastQueueID                int
+	lastQueueName              string
+	lastDate                   time.Time
+	lastTotalTicketsAvailable  int
+	lastTakenTickets           int
+	shouldFail                 bool
 }
 
-func (m *mockDailyStatsRepo) SaveDailyStats(ctx context.Context, queueID int, queueName string, date time.Time, ticketsServed int, registeredTickets int) error {
+func (m *mockDailyStatsRepo) SaveDailyStats(ctx context.Context, queueID int, queueName string, date time.Time, totalTicketsAvailable int, takenTickets int) error {
 	m.saveCalled = true
 	m.lastQueueID = queueID
 	m.lastQueueName = queueName
 	m.lastDate = date
-	m.lastTicketsServed = ticketsServed
-	m.lastRegisteredTickets = registeredTickets
+	m.lastTotalTicketsAvailable = totalTicketsAvailable
+	m.lastTakenTickets = takenTickets
 	if m.shouldFail {
 		return fmt.Errorf("mock stats save failed")
 	}
@@ -622,7 +622,7 @@ func TestCheckAndProcessStatus_WhenTransitionToInactiveWithStatsRepo_SavesDailyS
 							"tickets_left": 0,
 							"active": false,
 							"enabled": false,
-							"tickets_served": 42,
+							"max_tickets": 180,
 							"registered_tickets": 50
 						}]
 					}
@@ -665,12 +665,12 @@ func TestCheckAndProcessStatus_WhenTransitionToInactiveWithStatsRepo_SavesDailyS
 				t.Errorf("Expected queueID 24, got %d", statsRepo.lastQueueID)
 			}
 
-			if statsRepo.lastTicketsServed != 42 {
-				t.Errorf("Expected ticketsServed 42, got %d", statsRepo.lastTicketsServed)
+			if statsRepo.lastTotalTicketsAvailable != 180 {
+				t.Errorf("Expected totalTicketsAvailable 180, got %d", statsRepo.lastTotalTicketsAvailable)
 			}
 
-			if statsRepo.lastRegisteredTickets != 50 {
-				t.Errorf("Expected registeredTickets 50, got %d", statsRepo.lastRegisteredTickets)
+			if statsRepo.lastTakenTickets != 50 {
+				t.Errorf("Expected takenTickets 50, got %d", statsRepo.lastTakenTickets)
 			}
 
 			expectedDate := time.Date(2025, 6, 15, 0, 0, 0, 0, time.UTC)
@@ -693,7 +693,7 @@ func TestCheckAndProcessStatus_WhenNoTransitionToInactive_DoesNotSaveDailyStats(
 					"tickets_left": 5,
 					"active": true,
 					"enabled": true,
-					"tickets_served": 42,
+					"max_tickets": 180,
 					"registered_tickets": 50
 				}]
 			}
@@ -790,7 +790,7 @@ func TestCheckAndProcessStatus_WhenStatsRepoFails_DoesNotReturnError(t *testing.
 					"tickets_left": 0,
 					"active": false,
 					"enabled": false,
-					"tickets_served": 42,
+					"max_tickets": 180,
 					"registered_tickets": 50
 				}]
 			}

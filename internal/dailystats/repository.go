@@ -18,13 +18,13 @@ func NewRepository(db *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) SaveDailyStats(ctx context.Context, queueID int, queueName string, date time.Time, ticketsServed int, registeredTickets int) error {
+func (r *Repository) SaveDailyStats(ctx context.Context, queueID int, queueName string, date time.Time, totalTicketsAvailable int, takenTickets int) error {
 	return r.queries.UpsertDailyStats(ctx, UpsertDailyStatsParams{
-		QueueID:           int32(queueID),
-		QueueName:         queueName,
-		Date:              date,
-		TicketsServed:     int32(ticketsServed),
-		RegisteredTickets: int32(registeredTickets),
+		QueueID:               int32(queueID),
+		QueueName:             queueName,
+		Date:                  date,
+		TotalTicketsAvailable: int32(totalTicketsAvailable),
+		TakenTickets:          int32(takenTickets),
 	})
 }
 
