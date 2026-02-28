@@ -5,7 +5,7 @@ metadata:
 spec:
   schedule: "0 18 * * 1-5"
   timeZone: "Europe/Warsaw"
-  suspend: true
+  suspend: false
   startingDeadlineSeconds: 600
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
@@ -53,7 +53,7 @@ metadata:
 spec:
   schedule: "5 18 * * 5"
   timeZone: "Europe/Warsaw"
-  suspend: true
+  suspend: false
   startingDeadlineSeconds: 600
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
@@ -101,7 +101,7 @@ metadata:
 spec:
   schedule: "10 18 28-31 * *"
   timeZone: "Europe/Warsaw"
-  suspend: true
+  suspend: false
   startingDeadlineSeconds: 600
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3

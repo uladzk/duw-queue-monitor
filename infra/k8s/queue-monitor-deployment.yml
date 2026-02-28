@@ -17,7 +17,7 @@ spec:
         app: queue-monitor
     spec:
       containers:
-      - image: acrduwshared.azurecr.io/queue-monitor:1.1.2
+      - image: acrduwshared.azurecr.io/queue-monitor:1.4.0
         name: queue-monitor
         env:
         - name: LOG_LEVEL
@@ -29,7 +29,12 @@ spec:
         - name: STATUS_CHECK_INTERVAL_SECONDS
           value: "5"
         - name: FF_DAILY_STATS_ENABLED
-          value: "false"
+          value: "true"
+        - name: STATS_POSTGRES_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: postgres-app-duw-stats
+              key: uri
         - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
           valueFrom:
             secretKeyRef:
