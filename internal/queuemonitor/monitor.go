@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 )
 
 // DefaultQueueMonitor is responsible for collecting queue status and sending notifications about changes in queue availability.

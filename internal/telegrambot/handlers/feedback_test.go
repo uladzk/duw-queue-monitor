@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
-	"github.com/UladzK/duw-queue-monitor/internal/notifications"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 )
 
 func createMockTelegramNotifier(shouldFail bool) *notifications.TelegramNotifier {

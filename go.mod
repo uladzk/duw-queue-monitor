@@ -1,4 +1,4 @@
-module github.com/UladzK/duw-queue-monitor
+module github.com/uladzk/duw-queue-monitor
 
 go 1.25.3
 

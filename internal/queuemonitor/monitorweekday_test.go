@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 	"time"
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 )
 
 type MockTimeProvider struct {

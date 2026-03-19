@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 
 	"github.com/google/go-cmp/cmp"
 )
