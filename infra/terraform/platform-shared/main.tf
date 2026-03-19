@@ -1,6 +1,6 @@
 locals {
   location              = "Poland Central"
-  gh_repo               = "UladzK/duw-queue-monitor"
+  gh_repo               = "uladzk/duw-queue-monitor"
   gh_branch             = "main" // main only for now
   delete_retention_days = 30
 }
