@@ -9,10 +9,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/UladzK/duw-queue-monitor/internal/dailystats"
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
-	"github.com/UladzK/duw-queue-monitor/internal/notifications"
-	"github.com/UladzK/duw-queue-monitor/internal/statsreporting"
+	"github.com/uladzk/duw-queue-monitor/internal/dailystats"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/notifications"
+	"github.com/uladzk/duw-queue-monitor/internal/statsreporting"
 
 	"github.com/caarlos0/env/v11"
 	_ "github.com/lib/pq"

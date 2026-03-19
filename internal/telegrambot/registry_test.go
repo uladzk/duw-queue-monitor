@@ -6,8 +6,8 @@ import (
 	"net/http/httptest"
 	"slices"
 	"testing"
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
-	"github.com/UladzK/duw-queue-monitor/internal/notifications"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 
 	"github.com/go-telegram/bot"
 )

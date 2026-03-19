@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 )
 
 type DateTimeProvider interface {

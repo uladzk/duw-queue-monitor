@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 
 	"github.com/avast/retry-go/v4"
 )

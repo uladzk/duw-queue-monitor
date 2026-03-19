@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

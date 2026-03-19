@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/UladzK/duw-queue-monitor/internal/dailystats"
+	"github.com/uladzk/duw-queue-monitor/internal/dailystats"
 )
 
 type StatsReader interface {

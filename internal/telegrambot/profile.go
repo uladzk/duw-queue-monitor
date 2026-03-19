@@ -3,7 +3,7 @@ package telegrambot
 import (
 	"context"
 	"fmt"
-	"github.com/UladzK/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 
 	"github.com/go-telegram/bot"
 )
