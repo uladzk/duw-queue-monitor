@@ -3,17 +3,17 @@
   "embeds": [
     {
       "title": "DUW Queue Monitor Release",
-      "description": "{{SERVICE}} v{{VERSION}} has been published",
-      "color": {{COLOR}},
+      "description": "$SERVICE v$VERSION has been published",
+      "color": "$COLOR",
       "fields": [
-        { "name": "Service", "value": "{{SERVICE}}", "inline": true },
-        { "name": "Version", "value": "{{VERSION}}", "inline": true },
-        { "name": "Type", "value": "{{CHANGE_TYPE}}", "inline": true }
+        { "name": "Service", "value": "$SERVICE", "inline": true },
+        { "name": "Version", "value": "$VERSION", "inline": true },
+        { "name": "Type", "value": "$CHANGE_TYPE", "inline": true }
       ],
       "footer": {
         "text": "GitHub Actions"
       },
-      "timestamp": "{{TIMESTAMP}}"
+      "timestamp": "$TIMESTAMP"
     }
   ]
 }
