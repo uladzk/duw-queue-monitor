@@ -182,12 +182,20 @@ jobs:
     needs: generate-release-notes
     if: needs.generate-release-notes.outputs.has-public-changes == 'true'
     steps:
+      - id: app-token
+        name: Generate GitHub App token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_NOTES_APP_ID }}
+          private-key: ${{ secrets.RELEASE_NOTES_APP_PRIVATE_KEY }}
+          repositories: duw-queue-monitor-release-notes-test
+
       - id: checkout-release-notes-repo
         name: Checkout release notes repo
         uses: actions/checkout@v4
         with:
           repository: uladzk/duw-queue-monitor-release-notes-test
-          token: ${{ secrets.RELEASE_NOTES_PAT }}
+          token: ${{ steps.app-token.outputs.token }}
           path: release-notes-repo
 
       - id: checkout-templates
@@ -255,7 +263,7 @@ jobs:
         name: Create pull request
         shell: bash
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_NOTES_PAT }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh pr create \
             --repo "uladzk/duw-queue-monitor-release-notes-test" \
