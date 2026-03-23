@@ -16,6 +16,11 @@ permissions:
   contents: write
   models: read
 
+env:
+  RELEASE_NOTES_REPO: uladzk/duw-queue-monitor-release-notes-test
+  RELEASE_NOTES_REPO_NAME: duw-queue-monitor-release-notes-test
+  RELEASE_NOTES_REVIEWER: uladzk
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -188,13 +193,13 @@ jobs:
         with:
           app-id: ${{ secrets.RELEASE_NOTES_APP_ID }}
           private-key: ${{ secrets.RELEASE_NOTES_APP_PRIVATE_KEY }}
-          repositories: duw-queue-monitor-release-notes-test
+          repositories: ${{ env.RELEASE_NOTES_REPO_NAME }}
 
       - id: checkout-release-notes-repo
         name: Checkout release notes repo
         uses: actions/checkout@v4
         with:
-          repository: uladzk/duw-queue-monitor-release-notes-test
+          repository: ${{ env.RELEASE_NOTES_REPO }}
           token: ${{ steps.app-token.outputs.token }}
           path: release-notes-repo
 
@@ -266,12 +271,12 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh pr create \
-            --repo "uladzk/duw-queue-monitor-release-notes-test" \
+            --repo "${{ env.RELEASE_NOTES_REPO }}" \
             --title "${{ steps.read-pr-template.outputs.TITLE }}" \
             --body "${{ steps.read-pr-template.outputs.PR_BODY }}" \
             --head "${{ steps.create-branch-and-push.outputs.BRANCH }}" \
             --base "main" \
-            --reviewer "uladzk"
+            --reviewer "${{ env.RELEASE_NOTES_REVIEWER }}"
 
   notify-discord:
     runs-on: ubuntu-latest
