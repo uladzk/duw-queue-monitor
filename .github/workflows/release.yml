@@ -1,0 +1,282 @@
+name: "[WIP] Release workflow"
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        type: choice
+        options: [queue-monitor, telegram-bot, queue-stats-reports, duw-migrations]
+        description: 'Name of the service to publish'
+        required: true
+      version:
+        description: 'Semantic version of the service to publish'
+        required: true
+
+permissions:
+  id-token: write
+  contents: write
+  models: read
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: azure-login
+        name: 'Azure login'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.ACTION_PUBLISH_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - id: login-acr
+        name: 'Login to ACR using CLI to allow log in using service principal'
+        shell: bash
+        run: |
+          az acr login --name acrduwshared
+
+      - id: verify-image
+        name: 'Verify image with version does not exist'
+        shell: bash
+        run: |
+          IMAGE_NAME="acrduwshared.azurecr.io/${{ inputs.service }}:${{ inputs.version }}"
+          if docker pull $IMAGE_NAME; then
+            echo "❌ Image $IMAGE_NAME already exists. Exiting."
+            exit 1
+          else
+            echo "Image $IMAGE_NAME does not exist. Proceeding with build."
+          fi
+
+      - id: get-build-config
+        name: 'Get build configuration'
+        shell: bash
+        run: |
+          if [ "${{ inputs.service }}" = "duw-migrations" ]; then
+            echo "CONTEXT=./db" >> $GITHUB_OUTPUT
+            echo "DOCKERFILE=./db/Dockerfile" >> $GITHUB_OUTPUT
+          else
+            SERVICE_NAME_TRANSFORMED=$(echo "${{ inputs.service }}" | sed 's/-//g')
+            echo "CONTEXT=." >> $GITHUB_OUTPUT
+            echo "DOCKERFILE=./cmd/${SERVICE_NAME_TRANSFORMED}/Dockerfile" >> $GITHUB_OUTPUT
+          fi
+
+      - id: build-push-image
+        name: 'Build and push Docker image'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ steps.get-build-config.outputs.CONTEXT }}
+          file: ${{ steps.get-build-config.outputs.DOCKERFILE }}
+          push: true
+          tags: |
+            acrduwshared.azurecr.io/${{ inputs.service }}:${{ inputs.version }}
+            acrduwshared.azurecr.io/${{ inputs.service }}:latest
+
+      - id: create-tag
+        name: Create tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ inputs.service }}-${{ inputs.version }}',
+              sha: context.sha
+            })
+
+  generate-release-notes:
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    outputs:
+      has-public-changes: ${{ steps.parse-ai-response.outputs.has_public_changes }}
+      release-notes-body: ${{ steps.parse-ai-response.outputs.release_notes_body }}
+    steps:
+      - id: checkout
+        name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: collect-changes
+        name: Collect changes since last tag
+        shell: bash
+        run: |
+          TAG="${{ inputs.service }}-${{ inputs.version }}"
+
+          # Find the previous tag for this service
+          PREV_TAG=$(git tag -l "${{ inputs.service }}-*" --sort=-version:refname | grep -v "^${TAG}$" | head -1)
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found for ${{ inputs.service }}. Using all commits."
+            CHANGELOG=$(git log --no-merges --format="%h %s%n%b" HEAD)
+          else
+            echo "Collecting changes between ${PREV_TAG} and HEAD"
+            CHANGELOG=$(git log --no-merges --format="%h %s%n%b" ${PREV_TAG}..HEAD)
+          fi
+
+          echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+          # Write changelog to file to avoid shell escaping issues
+          echo "${CHANGELOG}" > /tmp/changelog.txt
+          cat /tmp/changelog.txt
+
+      - id: build-prompt
+        name: Build full prompt with context
+        shell: bash
+        run: |
+          PROMPT_TEMPLATE=$(cat .github/prompts/release-notes-classifier.md)
+          CHANGELOG=$(cat /tmp/changelog.txt)
+
+          cat > /tmp/full_prompt.txt <<PROMPT_EOF
+          ${PROMPT_TEMPLATE}
+
+          ## Input
+
+          **Service**: ${{ inputs.service }}
+          **Version**: ${{ inputs.version }}
+          **Previous tag**: ${{ steps.collect-changes.outputs.PREV_TAG }}
+          **Date**: $(date +%Y-%m-%d)
+
+          ### Commit log
+
+          \`\`\`
+          ${CHANGELOG}
+          \`\`\`
+          PROMPT_EOF
+
+      - id: ai-classify
+        name: Classify changes and generate release notes
+        uses: actions/ai-inference@v1
+        with:
+          model: openai/gpt-4.1
+          system-prompt-file: .github/prompts/release-notes-classifier.system.md
+          prompt-file: /tmp/full_prompt.txt
+
+      - id: parse-ai-response
+        name: Parse AI response
+        shell: bash
+        run: |
+          RESPONSE='${{ steps.ai-classify.outputs.response }}'
+
+          if echo "${RESPONSE}" | grep -q "CLASSIFICATION: PUBLIC"; then
+            echo "has_public_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_public_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Extract release notes body between markers
+          NOTES=$(echo "${RESPONSE}" | sed -n '/RELEASE_NOTES_START/,/RELEASE_NOTES_END/p' | sed '1d;$d')
+
+          {
+            echo "release_notes_body<<NOTES_EOF"
+            echo "${NOTES}"
+            echo "NOTES_EOF"
+          } >> $GITHUB_OUTPUT
+
+  create-release-notes-pr:
+    runs-on: ubuntu-latest
+    needs: generate-release-notes
+    if: needs.generate-release-notes.outputs.has-public-changes == 'true'
+    steps:
+      - id: create-release-notes
+        name: Create release notes file and PR
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_NOTES_PAT }}
+        run: |
+          DATE=$(date +%Y%m%d)
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          DATE_FORMATTED=$(date +%Y-%m-%d)
+          BRANCH="release-notes/${DATE}-${{ inputs.service }}-${{ inputs.version }}"
+          FILE_PATH="posts/${TIMESTAMP}.md"
+          TARGET_REPO="uladzk/duw-queue-monitor-release-notes-test"
+
+          gh repo clone "${TARGET_REPO}" /tmp/release-notes-repo
+          cd /tmp/release-notes-repo
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "${BRANCH}"
+
+          cat > "${FILE_PATH}" <<FILE_EOF
+          ---
+          draft: false
+          date: ${DATE_FORMATTED}
+          categories:
+            - Releases
+          ---
+
+          # DUW Queue Monitor Update
+
+          ## DUW ${{ inputs.service }} v${{ inputs.version }} is available!
+
+          ${{ needs.generate-release-notes.outputs.release-notes-body }}
+
+          ## More info
+
+          Read more on the https://github.com/uladzk/duw-queue-monitor/releases
+          FILE_EOF
+
+          git add "${FILE_PATH}"
+          git commit -m "release(${{ inputs.service }}): add release notes for v${{ inputs.version }}"
+          git push -u origin "${BRANCH}"
+
+          gh pr create \
+            --repo "${TARGET_REPO}" \
+            --title "Release notes: ${{ inputs.service }} v${{ inputs.version }}" \
+            --body "Auto-generated release notes for ${{ inputs.service }} v${{ inputs.version }}" \
+            --head "${BRANCH}" \
+            --base "main" \
+            --reviewer "uladzk"
+
+  notify-discord:
+    runs-on: ubuntu-latest
+    needs: [build-and-publish, generate-release-notes]
+    if: always() && needs.build-and-publish.result == 'success'
+    steps:
+      - id: send-discord-notification
+        name: Send Discord notification
+        shell: bash
+        run: |
+          HAS_PUBLIC="${{ needs.generate-release-notes.outputs.has-public-changes }}"
+
+          if [ "${HAS_PUBLIC}" = "true" ]; then
+            CHANGE_TYPE="Public release"
+            COLOR=5763719
+          else
+            CHANGE_TYPE="Internal update"
+            COLOR=9807270
+          fi
+
+          # TODO: Refine Discord embed template
+          PAYLOAD=$(cat <<DISCORD_EOF
+          {
+            "username": "DUW Release Bot",
+            "embeds": [
+              {
+                "title": "DUW Queue Monitor Release",
+                "description": "${{ inputs.service }} v${{ inputs.version }} has been published",
+                "color": ${COLOR},
+                "fields": [
+                  { "name": "Service", "value": "${{ inputs.service }}", "inline": true },
+                  { "name": "Version", "value": "${{ inputs.version }}", "inline": true },
+                  { "name": "Type", "value": "${CHANGE_TYPE}", "inline": true }
+                ],
+                "footer": {
+                  "text": "GitHub Actions"
+                },
+                "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              }
+            ]
+          }
+          DISCORD_EOF
+          )
+
+          curl -s -X POST \
+            -H "Content-Type: application/json" \
+            -d "${PAYLOAD}" \
+            "${{ secrets.DISCORD_WEBHOOK_URL }}"
