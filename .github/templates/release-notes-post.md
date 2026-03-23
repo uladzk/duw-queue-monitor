@@ -5,7 +5,7 @@ categories:
   - Releases
 ---
 
-# DUW Queue Monitor Update
+# DUW {{SERVICE}} Update
 
 ## DUW {{SERVICE}} v{{VERSION}} is available!
 
