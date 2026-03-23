@@ -6,6 +6,8 @@ type Config struct {
 	StatusCheckInternalSeconds int    `env:"STATUS_CHECK_INTERVAL_SECONDS" envDefault:"10"`
 	BroadcastChannelName       string `env:"NOTIFICATION_TELEGRAM_BROADCAST_CHANNEL_NAME,required"`
 	FFDailyStatsEnabled        bool   `env:"FF_DAILY_STATS_ENABLED" envDefault:"false"`
+	WorkingHourStartUTC        int    `env:"WORKING_HOUR_START_UTC" envDefault:"5"`
+	WorkingHourEndUTC          int    `env:"WORKING_HOUR_END_UTC" envDefault:"18"`
 	QueueMonitor               QueueMonitorConfig
 	NotificationTelegram       notifications.TelegramConfig
 }

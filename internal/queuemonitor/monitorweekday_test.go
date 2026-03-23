@@ -94,8 +94,9 @@ func TestCheckAndProcessStatus_Always_RunsCheckDependingOnCurrentDateTime(t *tes
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mm := &MockedQueueMonitor{}
+			cfg := &Config{WorkingHourStartUTC: 5, WorkingHourEndUTC: 18}
 			logger := logger.NewLogger(&logger.Config{Level: "error"})
-			wm := NewWeekdayQueueMonitor(mm, tt.time, logger)
+			wm := NewWeekdayQueueMonitor(mm, cfg, tt.time, logger)
 
 			// Act
 			_ = wm.CheckAndProcessStatus(context.Background())
