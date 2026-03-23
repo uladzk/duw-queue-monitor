@@ -116,8 +116,8 @@ jobs:
           PREV_TAG=$(git tag -l "${{ inputs.service }}-*" --sort=-version:refname | grep -v "^${TAG}$" | head -1)
 
           if [ -z "$PREV_TAG" ]; then
-            echo "No previous tag found for ${{ inputs.service }}. Using all commits."
-            CHANGELOG=$(git log --no-merges --format="%h %s%n%b" HEAD)
+            echo "No previous tag found for ${{ inputs.service }}. Using last 100 commits."
+            CHANGELOG=$(git log --no-merges --max-count=100 --format="%h %s%n%b" HEAD)
           else
             echo "Collecting changes between ${PREV_TAG} and HEAD"
             CHANGELOG=$(git log --no-merges --format="%h %s%n%b" ${PREV_TAG}..HEAD)
