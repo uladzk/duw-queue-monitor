@@ -182,54 +182,86 @@ jobs:
     needs: generate-release-notes
     if: needs.generate-release-notes.outputs.has-public-changes == 'true'
     steps:
-      - id: create-release-notes
-        name: Create release notes file and PR
+      - id: checkout-release-notes-repo
+        name: Checkout release notes repo
+        uses: actions/checkout@v4
+        with:
+          repository: uladzk/duw-queue-monitor-release-notes-test
+          token: ${{ secrets.RELEASE_NOTES_PAT }}
+          path: release-notes-repo
+
+      - id: checkout-templates
+        name: Checkout main repo for templates
+        uses: actions/checkout@v4
+        with:
+          path: main-repo
+
+      - id: prepare-release-notes
+        name: Prepare release notes file from template
+        shell: bash
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          DATE_FORMATTED=$(date +%Y-%m-%d)
+          FILE_PATH="posts/${TIMESTAMP}.md"
+
+          sed -e "s/{{DATE}}/${DATE_FORMATTED}/g" \
+              -e "s/{{SERVICE}}/${{ inputs.service }}/g" \
+              -e "s/{{VERSION}}/${{ inputs.version }}/g" \
+              main-repo/.github/templates/release-notes-post.md > /tmp/release-note.md
+
+          # Substitute release notes body (multiline)
+          awk -v body='${{ needs.generate-release-notes.outputs.release-notes-body }}' \
+              '{gsub(/\{\{RELEASE_NOTES_BODY\}\}/, body); print}' \
+              /tmp/release-note.md > "release-notes-repo/${FILE_PATH}"
+
+          echo "FILE_PATH=${FILE_PATH}" >> $GITHUB_OUTPUT
+
+      - id: read-pr-template
+        name: Read PR template
+        shell: bash
+        run: |
+          TITLE=$(grep '^title:' main-repo/.github/templates/release-notes-pr.md | sed 's/^title: *"//' | sed 's/"$//')
+          COMMIT_MSG=$(grep '^commit:' main-repo/.github/templates/release-notes-pr.md | sed 's/^commit: *"//' | sed 's/"$//')
+          PR_BODY=$(sed -n '/^---$/,/^---$/!p' main-repo/.github/templates/release-notes-pr.md | tail -n +1)
+
+          TITLE=$(echo "${TITLE}" | sed -e "s/{{SERVICE}}/${{ inputs.service }}/g" -e "s/{{VERSION}}/${{ inputs.version }}/g")
+          COMMIT_MSG=$(echo "${COMMIT_MSG}" | sed -e "s/{{SERVICE}}/${{ inputs.service }}/g" -e "s/{{VERSION}}/${{ inputs.version }}/g")
+          PR_BODY=$(echo "${PR_BODY}" | sed -e "s/{{SERVICE}}/${{ inputs.service }}/g" -e "s/{{VERSION}}/${{ inputs.version }}/g")
+
+          echo "TITLE=${TITLE}" >> $GITHUB_OUTPUT
+          echo "COMMIT_MSG=${COMMIT_MSG}" >> $GITHUB_OUTPUT
+          {
+            echo "PR_BODY<<PR_BODY_EOF"
+            echo "${PR_BODY}"
+            echo "PR_BODY_EOF"
+          } >> $GITHUB_OUTPUT
+
+      - id: create-branch-and-push
+        name: Create branch, commit and push
+        shell: bash
+        working-directory: release-notes-repo
+        run: |
+          DATE=$(date +%Y%m%d)
+          BRANCH="release-notes/${DATE}-${{ inputs.service }}-${{ inputs.version }}"
+
+          git checkout -b "${BRANCH}"
+          git add "${{ steps.prepare-release-notes.outputs.FILE_PATH }}"
+          git commit -m "${{ steps.read-pr-template.outputs.COMMIT_MSG }}"
+          git push -u origin "${BRANCH}"
+
+          echo "BRANCH=${BRANCH}" >> $GITHUB_OUTPUT
+
+      - id: create-pr
+        name: Create pull request
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.RELEASE_NOTES_PAT }}
         run: |
-          DATE=$(date +%Y%m%d)
-          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          DATE_FORMATTED=$(date +%Y-%m-%d)
-          BRANCH="release-notes/${DATE}-${{ inputs.service }}-${{ inputs.version }}"
-          FILE_PATH="posts/${TIMESTAMP}.md"
-          TARGET_REPO="uladzk/duw-queue-monitor-release-notes-test"
-
-          gh repo clone "${TARGET_REPO}" /tmp/release-notes-repo
-          cd /tmp/release-notes-repo
-
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "${BRANCH}"
-
-          cat > "${FILE_PATH}" <<FILE_EOF
-          ---
-          draft: false
-          date: ${DATE_FORMATTED}
-          categories:
-            - Releases
-          ---
-
-          # DUW Queue Monitor Update
-
-          ## DUW ${{ inputs.service }} v${{ inputs.version }} is available!
-
-          ${{ needs.generate-release-notes.outputs.release-notes-body }}
-
-          ## More info
-
-          Read more on the https://github.com/uladzk/duw-queue-monitor/releases
-          FILE_EOF
-
-          git add "${FILE_PATH}"
-          git commit -m "release(${{ inputs.service }}): add release notes for v${{ inputs.version }}"
-          git push -u origin "${BRANCH}"
-
           gh pr create \
-            --repo "${TARGET_REPO}" \
-            --title "Release notes: ${{ inputs.service }} v${{ inputs.version }}" \
-            --body "Auto-generated release notes for ${{ inputs.service }} v${{ inputs.version }}" \
-            --head "${BRANCH}" \
+            --repo "uladzk/duw-queue-monitor-release-notes-test" \
+            --title "${{ steps.read-pr-template.outputs.TITLE }}" \
+            --body "${{ steps.read-pr-template.outputs.PR_BODY }}" \
+            --head "${{ steps.create-branch-and-push.outputs.BRANCH }}" \
             --base "main" \
             --reviewer "uladzk"
 
