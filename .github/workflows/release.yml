@@ -310,7 +310,7 @@ jobs:
             -e "s/{{TIMESTAMP}}/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" \
             .github/templates/discord-release-notification.json)
 
-          curl -s -X POST \
+          curl -sS --fail -X POST \
             -H "Content-Type: application/json" \
             -d "${PAYLOAD}" \
             "${{ secrets.DISCORD_WEBHOOK_URL }}"
