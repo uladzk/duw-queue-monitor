@@ -1,16 +1,16 @@
 ---
 draft: false
-date: {{DATE}}
+date: $DATE
 categories:
   - Releases
 ---
 
-# DUW {{SERVICE}} Update
+# DUW $SERVICE Update
 
-## DUW {{SERVICE}} v{{VERSION}} is available!
+## DUW $SERVICE v$VERSION is available!
 
-{{RELEASE_NOTES_BODY}}
+$RELEASE_NOTES_BODY
 
 ## More info
 
-Read more on the https://github.com/uladzk/duw-queue-monitor/releases
+Read more at https://github.com/uladzk/duw-queue-monitor/releases
