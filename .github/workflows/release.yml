@@ -164,17 +164,18 @@ jobs:
       - id: parse-ai-response
         name: Parse AI response
         shell: bash
+        env:
+          AI_RESPONSE: ${{ steps.ai-classify.outputs.response }}
         run: |
-          RESPONSE='${{ steps.ai-classify.outputs.response }}'
+          echo "${AI_RESPONSE}" > /tmp/ai_response.txt
 
-          if echo "${RESPONSE}" | grep -q "CLASSIFICATION: PUBLIC"; then
+          if grep -q "CLASSIFICATION: PUBLIC" /tmp/ai_response.txt; then
             echo "has_public_changes=true" >> $GITHUB_OUTPUT
           else
             echo "has_public_changes=false" >> $GITHUB_OUTPUT
           fi
 
-          # Extract release notes body between markers
-          NOTES=$(echo "${RESPONSE}" | sed -n '/RELEASE_NOTES_START/,/RELEASE_NOTES_END/p' | sed '1d;$d')
+          NOTES=$(sed -n '/RELEASE_NOTES_START/,/RELEASE_NOTES_END/p' /tmp/ai_response.txt | sed '1d;$d')
 
           {
             echo "release_notes_body<<NOTES_EOF"
