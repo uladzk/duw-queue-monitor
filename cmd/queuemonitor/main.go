@@ -104,7 +104,7 @@ func buildRunner(log *logger.Logger) (*queuemonitor.Runner, func(), error) {
 
 	timeProvider := queuemonitor.NewSystemDateTimeProvider()
 	monitor := queuemonitor.NewQueueMonitor(&cfg, log, collector, notifier, statsRepo, timeProvider)
-	weekdayMonitor := queuemonitor.NewWeekdayQueueMonitor(monitor, timeProvider, log)
+	weekdayMonitor := queuemonitor.NewWeekdayQueueMonitor(monitor, &cfg, timeProvider, log)
 
 	runner := queuemonitor.NewRunner(&cfg, log, weekdayMonitor, stateRepo)
 	return runner, cleanup, nil
