@@ -213,20 +213,17 @@ jobs:
       - id: prepare-release-notes
         name: Prepare release notes file from template
         shell: bash
+        env:
+          RELEASE_NOTES_BODY: ${{ needs.generate-release-notes.outputs.release-notes-body }}
         run: |
           TIMESTAMP=$(date +%Y%m%d-%H%M%S)
-          DATE_FORMATTED=$(date +%Y-%m-%d)
           FILE_PATH="posts/${TIMESTAMP}.md"
+          export DATE="$(date +%Y-%m-%d)"
+          export SERVICE="${{ inputs.service }}"
+          export VERSION="${{ inputs.version }}"
 
-          sed -e "s/{{DATE}}/${DATE_FORMATTED}/g" \
-              -e "s/{{SERVICE}}/${{ inputs.service }}/g" \
-              -e "s/{{VERSION}}/${{ inputs.version }}/g" \
-              main-repo/.github/templates/release-notes-post.md > /tmp/release-note.md
-
-          # Substitute release notes body (multiline)
-          awk -v body='${{ needs.generate-release-notes.outputs.release-notes-body }}' \
-              '{gsub(/\{\{RELEASE_NOTES_BODY\}\}/, body); print}' \
-              /tmp/release-note.md > "release-notes-repo/${FILE_PATH}"
+          envsubst < main-repo/.github/templates/release-notes-post.md \
+            > "release-notes-repo/${FILE_PATH}"
 
           echo "FILE_PATH=${FILE_PATH}" >> $GITHUB_OUTPUT
 
@@ -234,13 +231,14 @@ jobs:
         name: Read PR template
         shell: bash
         run: |
-          TITLE=$(grep '^title:' main-repo/.github/templates/release-notes-pr.md | sed 's/^title: *"//' | sed 's/"$//')
-          COMMIT_MSG=$(grep '^commit:' main-repo/.github/templates/release-notes-pr.md | sed 's/^commit: *"//' | sed 's/"$//')
-          PR_BODY=$(sed -n '/^---$/,/^---$/!p' main-repo/.github/templates/release-notes-pr.md | tail -n +1)
+          export SERVICE="${{ inputs.service }}"
+          export VERSION="${{ inputs.version }}"
 
-          TITLE=$(echo "${TITLE}" | sed -e "s/{{SERVICE}}/${{ inputs.service }}/g" -e "s/{{VERSION}}/${{ inputs.version }}/g")
-          COMMIT_MSG=$(echo "${COMMIT_MSG}" | sed -e "s/{{SERVICE}}/${{ inputs.service }}/g" -e "s/{{VERSION}}/${{ inputs.version }}/g")
-          PR_BODY=$(echo "${PR_BODY}" | sed -e "s/{{SERVICE}}/${{ inputs.service }}/g" -e "s/{{VERSION}}/${{ inputs.version }}/g")
+          RENDERED=$(envsubst < main-repo/.github/templates/release-notes-pr.md)
+
+          TITLE=$(echo "${RENDERED}" | grep '^title:' | sed 's/^title: *"//' | sed 's/"$//')
+          COMMIT_MSG=$(echo "${RENDERED}" | grep '^commit:' | sed 's/^commit: *"//' | sed 's/"$//')
+          PR_BODY=$(echo "${RENDERED}" | sed -n '/^---$/,/^---$/!p' | tail -n +1)
 
           echo "TITLE=${TITLE}" >> $GITHUB_OUTPUT
           echo "COMMIT_MSG=${COMMIT_MSG}" >> $GITHUB_OUTPUT
@@ -295,20 +293,19 @@ jobs:
           HAS_PUBLIC="${{ needs.generate-release-notes.outputs.has-public-changes }}"
 
           if [ "${HAS_PUBLIC}" = "true" ]; then
-            CHANGE_TYPE="Public release"
-            COLOR=5763719
+            export CHANGE_TYPE="Public release"
+            export COLOR=5763719
           else
-            CHANGE_TYPE="Internal update"
-            COLOR=9807270
+            export CHANGE_TYPE="Internal update"
+            export COLOR=9807270
           fi
 
-          PAYLOAD=$(sed \
-            -e "s/{{SERVICE}}/${{ inputs.service }}/g" \
-            -e "s/{{VERSION}}/${{ inputs.version }}/g" \
-            -e "s/{{CHANGE_TYPE}}/${CHANGE_TYPE}/g" \
-            -e "s/{{COLOR}}/${COLOR}/g" \
-            -e "s/{{TIMESTAMP}}/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" \
-            .github/templates/discord-release-notification.json)
+          export SERVICE="${{ inputs.service }}"
+          export VERSION="${{ inputs.version }}"
+          export TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          PAYLOAD=$(envsubst < .github/templates/discord-release-notification.json \
+            | jq '.embeds[0].color |= tonumber')
 
           curl -sS --fail -X POST \
             -H "Content-Type: application/json" \
