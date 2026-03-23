@@ -152,7 +152,7 @@ jobs:
         name: Classify changes and generate release notes
         uses: actions/ai-inference@v1
         with:
-          model: openai/gpt-4.1
+          model: anthropic/claude-haiku-4.5
           system-prompt-file: .github/prompts/release-notes-classifier.system.md
           prompt-file: /tmp/full_prompt.txt
 
