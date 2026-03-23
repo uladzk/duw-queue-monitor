@@ -6,7 +6,7 @@ import (
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
 )
 
-// WeekdayQueueMonitor is a wrapper around the DefaultQueueMonitor that disables queue monitoring on weekends and during off hours (06:00 - 17:00 UTC).
+// WeekdayQueueMonitor is a wrapper around the DefaultQueueMonitor that disables queue monitoring on weekends and outside working hours (05:00 - 18:00 UTC).
 // It uses a DateTimeProvider to get the current time, allowing for easier testing and mocking
 // Note: I don't like this idea, but DUW API returns queue active and available during weekends, so this is the easiest way to avoid unnecessary notifications to users.
 type WeekdayQueueMonitor struct {
@@ -16,7 +16,7 @@ type WeekdayQueueMonitor struct {
 }
 
 const (
-	workingHourStart = 6  // 06:00 UTC
+	workingHourStart = 5  // 05:00 UTC
 	workingHourEnd   = 18 // 18:00 UTC
 )
 
@@ -42,7 +42,7 @@ func (w *WeekdayQueueMonitor) GetState() *MonitorState {
 
 func (w *WeekdayQueueMonitor) CheckAndProcessStatus(ctx context.Context) error {
 	if w.isDuwOffTime() {
-		w.log.Debug("Queue monitoring is disabled on weekends and off hours (06:00 - 18:00 UTC), skipping status check")
+		w.log.Debug("Queue monitoring is disabled on weekends and outside working hours (05:00 - 18:00 UTC), skipping status check")
 		return nil
 	}
 

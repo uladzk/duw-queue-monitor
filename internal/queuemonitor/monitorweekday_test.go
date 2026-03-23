@@ -60,9 +60,19 @@ func TestCheckAndProcessStatus_Always_RunsCheckDependingOnCurrentDateTime(t *tes
 			expected: false,
 		},
 		{
-			name:     "Wednesday 05:59 in Poland",
+			name:     "Wednesday 05:59 in Poland (03:59 UTC)",
 			time:     NewMockTimeProvider("2025-04-02T05:59:00+02:00"),
 			expected: false,
+		},
+		{
+			name:     "Wednesday 06:59 in Poland (04:59 UTC)",
+			time:     NewMockTimeProvider("2025-04-02T06:59:00+02:00"),
+			expected: false,
+		},
+		{
+			name:     "Wednesday 07:00 in Poland (05:00 UTC)",
+			time:     NewMockTimeProvider("2025-04-02T07:00:00+02:00"),
+			expected: true,
 		},
 		{
 			name:     "Monday 08:00 in Poland",
