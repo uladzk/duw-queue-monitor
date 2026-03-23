@@ -270,6 +270,10 @@ jobs:
     needs: [build-and-publish, generate-release-notes]
     if: always() && needs.build-and-publish.result == 'success'
     steps:
+      - id: checkout
+        name: Checkout code
+        uses: actions/checkout@v4
+
       - id: send-discord-notification
         name: Send Discord notification
         shell: bash
@@ -284,29 +288,13 @@ jobs:
             COLOR=9807270
           fi
 
-          # TODO: Refine Discord embed template
-          PAYLOAD=$(cat <<DISCORD_EOF
-          {
-            "username": "DUW Release Bot",
-            "embeds": [
-              {
-                "title": "DUW Queue Monitor Release",
-                "description": "${{ inputs.service }} v${{ inputs.version }} has been published",
-                "color": ${COLOR},
-                "fields": [
-                  { "name": "Service", "value": "${{ inputs.service }}", "inline": true },
-                  { "name": "Version", "value": "${{ inputs.version }}", "inline": true },
-                  { "name": "Type", "value": "${CHANGE_TYPE}", "inline": true }
-                ],
-                "footer": {
-                  "text": "GitHub Actions"
-                },
-                "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-              }
-            ]
-          }
-          DISCORD_EOF
-          )
+          PAYLOAD=$(sed \
+            -e "s/{{SERVICE}}/${{ inputs.service }}/g" \
+            -e "s/{{VERSION}}/${{ inputs.version }}/g" \
+            -e "s/{{CHANGE_TYPE}}/${CHANGE_TYPE}/g" \
+            -e "s/{{COLOR}}/${COLOR}/g" \
+            -e "s/{{TIMESTAMP}}/$(date -u +%Y-%m-%dT%H:%M:%SZ)/g" \
+            .github/templates/discord-release-notification.json)
 
           curl -s -X POST \
             -H "Content-Type: application/json" \
