@@ -16,6 +16,7 @@ import (
 	"github.com/uladzk/duw-queue-monitor/internal/queuemonitor"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/go-telegram/bot"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 )
@@ -85,7 +86,10 @@ func buildRunner(log *logger.Logger) (*queuemonitor.Runner, func(), error) {
 
 	stateRepo := queuemonitor.NewMonitorStateRepository(redisClient, cfg.QueueMonitor.StateTtlSeconds)
 	collector := queuemonitor.NewStatusCollector(&cfg.QueueMonitor, httpClient, log)
-	notifier := buildNotifier(&cfg, log, httpClient)
+	notifier, err := buildNotifier(&cfg, log)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to build notifier: %w", err)
+	}
 
 	cleanup := func() {}
 	var statsRepo queuemonitor.DailyStatsRepository
@@ -110,6 +114,10 @@ func buildRunner(log *logger.Logger) (*queuemonitor.Runner, func(), error) {
 	return runner, cleanup, nil
 }
 
-func buildNotifier(cfg *queuemonitor.Config, log *logger.Logger, httpClient *http.Client) queuemonitor.Notifier {
-	return notifications.NewTelegramNotifier(&cfg.NotificationTelegram, log, httpClient)
+func buildNotifier(cfg *queuemonitor.Config, log *logger.Logger) (queuemonitor.Notifier, error) {
+	b, err := bot.New(cfg.NotificationTelegram.BotToken, bot.WithSkipGetMe())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create telegram bot: %w", err)
+	}
+	return notifications.NewTelegramNotifier(&cfg.NotificationTelegram, b, log), nil
 }
