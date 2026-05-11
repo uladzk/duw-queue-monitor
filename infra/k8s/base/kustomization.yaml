@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - queue-monitor-deployment.yml
+  - queue-monitor-external-secret.yml
+  - telegram-bot-deployment.yml
+  - telegram-bot-external-secret.yml
+  - queue-stats-reports-cronjob.yml
+  - queue-stats-reports-external-secret.yml
+  - postgres/postgres-storageclass.yml
+  - postgres/postgres-cluster.yml
+  - postgres/postgres-external-secret.yml
+  - postgres/postgres-app-external-secret.yml
+  - postgres/migrations-job.yml
+  - redis/redis-config-map.yml
+  - redis/redis-deployment.yml
+  - redis/redis-service.yml

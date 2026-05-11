@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: acrduwshared.azurecr.io/queue-monitor
+    newName: ghcr.io/uladzk/queue-monitor
+    newTag: "1.4.0"
+  - name: acrduwshared.azurecr.io/telegram-bot
+    newName: ghcr.io/uladzk/telegram-bot
+    newTag: "1.0.0"
+  - name: acrduwshared.azurecr.io/queue-stats-reports
+    newName: ghcr.io/uladzk/queue-stats-reports
+    newTag: "1.1.0"
+  - name: acrduwshared.azurecr.io/duw-migrations
+    newName: ghcr.io/uladzk/duw-migrations
+    newTag: "1.1.0"
+
+patches:
+  - path: patches/storageclass.yaml
+    target:
+      kind: StorageClass
+      name: postgres-storage
