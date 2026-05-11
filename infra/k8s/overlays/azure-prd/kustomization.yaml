@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+images:
+  - name: acrduwshared.azurecr.io/queue-monitor
+    newName: acrduwshared.azurecr.io/queue-monitor
+    newTag: "1.4.0"
+  - name: acrduwshared.azurecr.io/telegram-bot
+    newName: acrduwshared.azurecr.io/telegram-bot
+    newTag: "1.0.0"
+  - name: acrduwshared.azurecr.io/queue-stats-reports
+    newName: acrduwshared.azurecr.io/queue-stats-reports
+    newTag: "1.1.0"
+  - name: acrduwshared.azurecr.io/duw-migrations
+    newName: acrduwshared.azurecr.io/duw-migrations
+    newTag: "1.1.0"

@@ -107,13 +107,12 @@ This allows the monitor to resume from where it left off after restarts and avoi
 
 ### Deployment Structure
 
-- `infra/k8s/`: Kubernetes deployment manifests
-  - `queue-monitor-deployment.yml`: Production deployment
-  - `queue-monitor-deployment-dev.yml`: Development deployment
-  - `telegram-bot-deployment.yml`: Bot deployment (same for dev/prd)
-  - `queue-stats-reports-cronjob.yml`: CronJob definitions (daily/weekly/monthly)
-  - `queue-stats-reports-external-secret.yml`: Telegram secrets for reports service
-  - External secrets for sensitive configuration
+- `infra/k8s/`: Kubernetes deployment manifests, structured as a Kustomize base + per-cloud × per-env overlays
+  - `base/`: cloud- and env-agnostic manifests (Deployments, CronJobs, CNPG Cluster, Redis, ExternalSecrets, StorageClass)
+  - `overlays/azure-prd/`, `overlays/azure-dev/`: Azure overlays (ACR image registry, Azure Disk StorageClass)
+  - `overlays/ovh-prd/`, `overlays/ovh-dev/`: OVH overlays (ghcr.io image registry, Cinder StorageClass)
+  - Dev overlays patch `LOG_LEVEL=debug` and `STATUS_CHECK_INTERVAL_SECONDS=120` on `queue-monitor`
+  - Apply pattern: `kubectl apply -k infra/k8s/overlays/<cloud>-<env>/`
 
 - `infra/terraform/`: Terraform infrastructure as code, split per cloud provider (`azure/`, `ovh/`)
   - `azure/aks/`: AKS cluster configuration
