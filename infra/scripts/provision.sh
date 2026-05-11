@@ -37,7 +37,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-MODULE_DIR="$SCRIPT_DIR/../terraform/$MODULE"
+MODULE_DIR="$SCRIPT_DIR/../terraform/azure/$MODULE"
 
 # --- Constants ---
 readonly AZURE_SUB="77a70a5e-2230-43b7-8983-61e7497498a8"
