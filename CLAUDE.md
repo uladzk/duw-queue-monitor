@@ -115,10 +115,10 @@ This allows the monitor to resume from where it left off after restarts and avoi
   - `queue-stats-reports-external-secret.yml`: Telegram secrets for reports service
   - External secrets for sensitive configuration
 
-- `infra/terraform/`: Terraform infrastructure as code
-  - `aks/`: AKS cluster configuration
-  - `k8s/`: Kubernetes resources (namespaces, RBAC)
-  - `platform-shared/`: Shared resources (ACR, Key Vault)
+- `infra/terraform/`: Terraform infrastructure as code, split per cloud provider (`azure/`, `ovh/`)
+  - `azure/aks/`: AKS cluster configuration
+  - `azure/k8s/`: Kubernetes resources (namespaces, RBAC)
+  - `azure/platform-shared/`: Shared resources (ACR, Key Vault)
 
 ### Kubernetes Environments
 
