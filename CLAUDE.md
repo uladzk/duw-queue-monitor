@@ -119,6 +119,8 @@ This allows the monitor to resume from where it left off after restarts and avoi
   - `azure/k8s/`: Kubernetes resources (namespaces, RBAC)
   - `azure/platform-shared/`: Shared resources (ACR, Key Vault)
   - `ovh/platform-shared/`: Shared OVH resources (Object Storage bucket for Terraform state, S3 user + credentials)
+  - `ovh/mks/`: OVH Managed Kubernetes Service cluster + node pool (replaces `azure/aks/`)
+  - `ovh/k8s/`: In-cluster baseline on OVH MKS (External Secrets Operator, CNPG operator, Infisical SecretStore)
 
 ### Provisioning Scripts
 
