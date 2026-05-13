@@ -5,7 +5,7 @@ locals {
 resource "ovh_cloud_project_kube" "mks" {
   service_name = var.project_id
   name         = local.cluster_name
-  region       = "WAW"
+  region       = var.region
   version      = var.kubernetes_version
 }
 
