@@ -26,7 +26,16 @@ resource "ovh_cloud_project_user_s3_policy" "tfstate" {
     Statement = [{
       Sid    = "FullAccessToTfstateBucket"
       Effect = "Allow"
-      Action = ["s3:*"]
+      Action = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:ListBucket",
+        "s3:GetBucketLocation",
+        "s3:ListMultipartUploadParts",
+        "s3:ListBucketMultipartUploads",
+        "s3:AbortMultipartUpload",
+      ]
       Resource = [
         "arn:aws:s3:::${ovh_cloud_project_storage.tfstate.name}",
         "arn:aws:s3:::${ovh_cloud_project_storage.tfstate.name}/*"
