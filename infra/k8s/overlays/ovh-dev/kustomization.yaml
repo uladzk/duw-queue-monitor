@@ -23,6 +23,10 @@ patches:
     target:
       kind: StorageClass
       name: postgres-storage
+  - path: patches/cnpg-storageclass.yaml
+    target:
+      kind: Cluster
+      name: postgres
   - path: patches/queue-monitor-dev-env.yaml
     target:
       kind: Deployment
