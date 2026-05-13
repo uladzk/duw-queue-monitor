@@ -18,3 +18,19 @@ resource "ovh_cloud_project_storage" "tfstate" {
   region_name  = upper(var.region)
   name         = local.tfstate_bucket
 }
+
+resource "ovh_cloud_project_user_s3_policy" "tfstate" {
+  service_name = var.project_id
+  user_id      = ovh_cloud_project_user.tfstate.id
+  policy = jsonencode({
+    Statement = [{
+      Sid    = "FullAccessToTfstateBucket"
+      Effect = "Allow"
+      Action = ["s3:*"]
+      Resource = [
+        "arn:aws:s3:::${ovh_cloud_project_storage.tfstate.name}",
+        "arn:aws:s3:::${ovh_cloud_project_storage.tfstate.name}/*"
+      ]
+    }]
+  })
+}
