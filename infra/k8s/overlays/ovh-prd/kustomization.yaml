@@ -23,3 +23,7 @@ patches:
     target:
       kind: StorageClass
       name: postgres-storage
+  - path: patches/cnpg-storageclass.yaml
+    target:
+      kind: Cluster
+      name: postgres

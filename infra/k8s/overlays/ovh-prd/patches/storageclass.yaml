@@ -1,7 +1,5 @@
-- op: replace
-  path: /provisioner
-  value: cinder.csi.openstack.org
-- op: replace
-  path: /parameters
-  value:
-    type: classic
+$patch: delete
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: postgres-storage
