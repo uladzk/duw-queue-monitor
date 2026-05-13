@@ -23,6 +23,11 @@ variable "node_count" {
   description = "Fixed node count (autoscale is disabled — min/max/desired all equal this value)"
 }
 
+variable "region" {
+  type        = string
+  description = "OVH MKS datacenter region code (e.g., \"WAW1\" — note this is the physical datacenter code, not the logical region used for Object Storage)"
+}
+
 variable "ovh_application_key" {
   type        = string
   description = "OVH API application key"
