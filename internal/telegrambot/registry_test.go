@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"slices"
 	"testing"
+
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
 	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 
@@ -16,16 +17,20 @@ func createTestHandlerRegistry() *HandlerRegistry {
 	logger := logger.NewLogger(&logger.Config{Level: "error"})
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, `{"ok":true}`)
+		fmt.Fprintln(w, `{"ok":true,"result":{"message_id":1,"chat":{"id":1},"text":"ok"}}`)
 	}))
 
 	cfg := &notifications.TelegramConfig{
-		BaseApiUrl: server.URL,
-		BotToken:   "test-token",
+		BotToken:              "test-token",
+		MaxRetryAttempts:      1,
+		RetryDelayMs:          100,
+		RequestTimeoutSeconds: 2,
 	}
 
-	telegramNotifier := notifications.NewTelegramNotifier(cfg, logger, &http.Client{})
+	b, _ := bot.New("test-token", bot.WithServerURL(server.URL), bot.WithSkipGetMe())
+	telegramNotifier := notifications.NewTelegramNotifier(cfg, b, logger)
 
 	return NewHandlerRegistry(logger, telegramNotifier, "admin123")
 }
@@ -42,7 +47,7 @@ func TestHandlerRegistry_RegisterAllHandlers_FullFunctionality(t *testing.T) {
 	}))
 	defer mockBotServer.Close()
 
-	testBot, err := bot.New("test-token", bot.WithServerURL(mockBotServer.URL))
+	testBot, err := bot.New("test-token", bot.WithServerURL(mockBotServer.URL), bot.WithSkipGetMe())
 	if err != nil {
 		t.Fatalf("Failed to create test bot: %v", err)
 	}

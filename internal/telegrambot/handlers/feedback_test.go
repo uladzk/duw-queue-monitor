@@ -6,30 +6,35 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
 	"github.com/uladzk/duw-queue-monitor/internal/notifications"
+
+	"github.com/go-telegram/bot"
 )
 
 func createMockTelegramNotifier(shouldFail bool) *notifications.TelegramNotifier {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
 		if shouldFail {
-			http.Error(w, "Server error", http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintln(w, `{"ok":false,"description":"Server error"}`)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, `{"ok":true}`)
+		fmt.Fprintln(w, `{"ok":true,"result":{"message_id":1,"chat":{"id":1},"text":"ok"}}`)
 	}))
 
 	cfg := &notifications.TelegramConfig{
-		BaseApiUrl:            server.URL,
 		BotToken:              "test-token",
 		MaxRetryAttempts:      1,
-		RetryDelayMs:          500,
+		RetryDelayMs:          100,
 		RequestTimeoutSeconds: 2,
 	}
 
-	logger := logger.NewLogger(&logger.Config{Level: "error"})
-	return notifications.NewTelegramNotifier(cfg, logger, &http.Client{})
+	b, _ := bot.New("test-token", bot.WithServerURL(server.URL), bot.WithSkipGetMe())
+	log := logger.NewLogger(&logger.Config{Level: "error"})
+	return notifications.NewTelegramNotifier(cfg, b, log)
 }
 
 func TestFeedbackHandler_GetReplyPatterns_ReturnsCorrectPattern(t *testing.T) {
@@ -51,28 +56,26 @@ func TestFeedbackHandler_GetReplyPatterns_ReturnsCorrectPattern(t *testing.T) {
 
 func TestFeedbackHandler_HandleReply_WhenCalled_ProcessesUserFeedbackCorrectly(t *testing.T) {
 	// Arrange
-	logger := logger.NewLogger(&logger.Config{Level: "error"})
+	log := logger.NewLogger(&logger.Config{Level: "error"})
 
 	var capturedAdminRequest *http.Request
-	var capturedAdminBody string
 	adminServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedAdminRequest = r
-		body := make([]byte, r.ContentLength)
-		r.Body.Read(body)
-		capturedAdminBody = string(body)
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintln(w, `{"ok":true}`)
+		fmt.Fprintln(w, `{"ok":true,"result":{"message_id":1,"chat":{"id":1},"text":"ok"}}`)
 	}))
 	defer adminServer.Close()
 
 	cfg := &notifications.TelegramConfig{
-		BaseApiUrl:            adminServer.URL,
 		BotToken:              "test-token",
 		MaxRetryAttempts:      1,
-		RetryDelayMs:          500,
+		RetryDelayMs:          100,
 		RequestTimeoutSeconds: 2,
 	}
-	mockNotifier := notifications.NewTelegramNotifier(cfg, logger, &http.Client{})
+
+	b, _ := bot.New("test-token", bot.WithServerURL(adminServer.URL), bot.WithSkipGetMe())
+	mockNotifier := notifications.NewTelegramNotifier(cfg, b, log)
 
 	adminChatID := "admin123"
 	feedbackText := "This is user feedback about the bot"
@@ -90,16 +93,11 @@ func TestFeedbackHandler_HandleReply_WhenCalled_ProcessesUserFeedbackCorrectly(t
 		t.Error("Expected admin notification to be sent")
 	}
 
-	if capturedAdminBody == "" {
-		t.Error("Expected admin message body to be captured")
+	if capturedAdminRequest != nil && capturedAdminRequest.Method != "POST" {
+		t.Errorf("Expected POST request for admin notification, got %s", capturedAdminRequest.Method)
 	}
 
 	expectedAdminMessage := "💬 <b>Nowa opinia od użytkownika</b>\n\n📝 Treść:\nThis is user feedback about the bot"
-	if capturedAdminBody != "" {
-		if capturedAdminRequest.Method != "POST" {
-			t.Errorf("Expected POST request for admin notification, got %s", capturedAdminRequest.Method)
-		}
-	}
 	actualAdminMessage := fmt.Sprintf(feedbackAdminTemplate, feedbackText)
 	if actualAdminMessage != expectedAdminMessage {
 		t.Errorf("Expected admin message:\n%s\nGot:\n%s", expectedAdminMessage, actualAdminMessage)

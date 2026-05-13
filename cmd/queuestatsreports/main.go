@@ -5,9 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/uladzk/duw-queue-monitor/internal/dailystats"
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
@@ -15,6 +13,7 @@ import (
 	"github.com/uladzk/duw-queue-monitor/internal/statsreporting"
 
 	"github.com/caarlos0/env/v11"
+	"github.com/go-telegram/bot"
 	_ "github.com/lib/pq"
 )
 
@@ -53,8 +52,11 @@ func run(period string) error {
 		return fmt.Errorf("failed to ping postgres: %w", err)
 	}
 
-	httpClient := &http.Client{Timeout: 10 * time.Second}
-	sender := notifications.NewTelegramNotifier(&cfg.NotificationTelegram, log, httpClient)
+	b, err := bot.New(cfg.NotificationTelegram.BotToken, bot.WithSkipGetMe())
+	if err != nil {
+		return fmt.Errorf("failed to create telegram bot: %w", err)
+	}
+	sender := notifications.NewTelegramNotifier(&cfg.NotificationTelegram, b, log)
 	statsReader := dailystats.NewRepository(db)
 	timeProvider := statsreporting.NewSystemDateTimeProvider()
 
