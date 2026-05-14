@@ -7,7 +7,7 @@ set -euo pipefail
 #   gh auth token | crane auth login ghcr.io -u uladzk --password-stdin
 
 readonly ACR="acrduwshared.azurecr.io"
-readonly GHCR="ghcr.io/uladzk"
+readonly GHCR="ghcr.io/uladzk/duw-queue-monitor"
 readonly IMAGES=(
   "queue-monitor:1.4.0"
   "telegram-bot:1.0.0"

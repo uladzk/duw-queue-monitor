@@ -6,16 +6,16 @@ resources:
 
 images:
   - name: acrduwshared.azurecr.io/queue-monitor
-    newName: ghcr.io/uladzk/queue-monitor
+    newName: ghcr.io/uladzk/duw-queue-monitor/queue-monitor
     newTag: "1.4.0"
   - name: acrduwshared.azurecr.io/telegram-bot
-    newName: ghcr.io/uladzk/telegram-bot
+    newName: ghcr.io/uladzk/duw-queue-monitor/telegram-bot
     newTag: "1.0.0"
   - name: acrduwshared.azurecr.io/queue-stats-reports
-    newName: ghcr.io/uladzk/queue-stats-reports
+    newName: ghcr.io/uladzk/duw-queue-monitor/queue-stats-reports
     newTag: "1.1.0"
   - name: acrduwshared.azurecr.io/duw-migrations
-    newName: ghcr.io/uladzk/duw-migrations
+    newName: ghcr.io/uladzk/duw-queue-monitor/duw-migrations
     newTag: "1.1.0"
 
 patches:

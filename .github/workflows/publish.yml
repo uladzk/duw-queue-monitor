@@ -68,7 +68,7 @@ jobs:
         name: 'Verify ghcr image does not exist'
         shell: bash
         run: |
-          IMAGE_NAME="ghcr.io/uladzk/${{ inputs.service }}:${{ inputs.version }}"
+          IMAGE_NAME="ghcr.io/uladzk/duw-queue-monitor/${{ inputs.service }}:${{ inputs.version }}"
           if docker pull $IMAGE_NAME; then
             echo "❌ Image $IMAGE_NAME already exists. Exiting."
             exit 1
@@ -109,8 +109,8 @@ jobs:
           file: ${{ steps.get-build-config.outputs.DOCKERFILE }}
           push: true
           tags: |
-            ghcr.io/uladzk/${{ inputs.service }}:${{ inputs.version }}
-            ghcr.io/uladzk/${{ inputs.service }}:latest
+            ghcr.io/uladzk/duw-queue-monitor/${{ inputs.service }}:${{ inputs.version }}
+            ghcr.io/uladzk/duw-queue-monitor/${{ inputs.service }}:latest
       - id: create-tag
         name: Create tag
         uses: actions/github-script@v7
