@@ -119,6 +119,10 @@ jobs:
           tags: |
             ghcr.io/uladzk/duw-queue-monitor/${{ inputs.service }}:${{ inputs.version }}
             ghcr.io/uladzk/duw-queue-monitor/${{ inputs.service }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          annotations: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
 
       - id: create-tag
         name: Create tag
