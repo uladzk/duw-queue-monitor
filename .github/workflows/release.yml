@@ -15,6 +15,7 @@ permissions:
   id-token: write
   contents: write
   models: read
+  packages: write
 
 env:
   RELEASE_NOTES_REPO: uladzk/duw-queue-monitor-release-notes-test
@@ -32,6 +33,7 @@ jobs:
           fetch-depth: 0
 
       - id: azure-login
+        if: vars.PUBLISH_TO_GHCR == 'false'
         name: 'Azure login'
         uses: azure/login@v2
         with:
@@ -40,16 +42,40 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - id: login-acr
+        if: vars.PUBLISH_TO_GHCR == 'false'
         name: 'Login to ACR using CLI to allow log in using service principal'
         shell: bash
         run: |
           az acr login --name acrduwshared
 
-      - id: verify-image
-        name: 'Verify image with version does not exist'
+      - id: login-ghcr
+        if: vars.PUBLISH_TO_GHCR != 'false'
+        name: 'Login to ghcr.io'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: verify-image-acr
+        if: vars.PUBLISH_TO_GHCR == 'false'
+        name: 'Verify ACR image does not exist'
         shell: bash
         run: |
           IMAGE_NAME="acrduwshared.azurecr.io/${{ inputs.service }}:${{ inputs.version }}"
+          if docker pull $IMAGE_NAME; then
+            echo "❌ Image $IMAGE_NAME already exists. Exiting."
+            exit 1
+          else
+            echo "Image $IMAGE_NAME does not exist. Proceeding with build."
+          fi
+
+      - id: verify-image-ghcr
+        if: vars.PUBLISH_TO_GHCR != 'false'
+        name: 'Verify ghcr image does not exist'
+        shell: bash
+        run: |
+          IMAGE_NAME="ghcr.io/uladzk/${{ inputs.service }}:${{ inputs.version }}"
           if docker pull $IMAGE_NAME; then
             echo "❌ Image $IMAGE_NAME already exists. Exiting."
             exit 1
@@ -70,8 +96,9 @@ jobs:
             echo "DOCKERFILE=./cmd/${SERVICE_NAME_TRANSFORMED}/Dockerfile" >> $GITHUB_OUTPUT
           fi
 
-      - id: build-push-image
-        name: 'Build and push Docker image'
+      - id: build-push-image-acr
+        if: vars.PUBLISH_TO_GHCR == 'false'
+        name: 'Build and push Docker image to ACR'
         uses: docker/build-push-action@v6
         with:
           context: ${{ steps.get-build-config.outputs.CONTEXT }}
@@ -80,6 +107,18 @@ jobs:
           tags: |
             acrduwshared.azurecr.io/${{ inputs.service }}:${{ inputs.version }}
             acrduwshared.azurecr.io/${{ inputs.service }}:latest
+
+      - id: build-push-image-ghcr
+        if: vars.PUBLISH_TO_GHCR != 'false'
+        name: 'Build and push Docker image to ghcr.io'
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ steps.get-build-config.outputs.CONTEXT }}
+          file: ${{ steps.get-build-config.outputs.DOCKERFILE }}
+          push: true
+          tags: |
+            ghcr.io/uladzk/${{ inputs.service }}:${{ inputs.version }}
+            ghcr.io/uladzk/${{ inputs.service }}:latest
 
       - id: create-tag
         name: Create tag
