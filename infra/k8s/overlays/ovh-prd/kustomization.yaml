@@ -27,3 +27,7 @@ patches:
     target:
       kind: Cluster
       name: postgres
+  - path: patches/queue-monitor-prd-env.yaml
+    target:
+      kind: Deployment
+      name: queue-monitor
