@@ -25,3 +25,14 @@ variable "ovh_consumer_key" {
   description = "OVH API consumer key"
   sensitive   = true
 }
+
+variable "alert_email" {
+  type        = string
+  description = "Email address that receives OVH Public Cloud project cost alerts"
+}
+
+variable "monthly_threshold_eur" {
+  type        = number
+  description = "Monthly spend threshold (EUR) above which OVH sends a cost alert"
+  default     = 15
+}
