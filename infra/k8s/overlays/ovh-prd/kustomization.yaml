@@ -7,7 +7,7 @@ resources:
 images:
   - name: acrduwshared.azurecr.io/queue-monitor
     newName: ghcr.io/uladzk/duw-queue-monitor/queue-monitor
-    newTag: "1.5.0"
+    newTag: "1.5.1"
   - name: acrduwshared.azurecr.io/telegram-bot
     newName: ghcr.io/uladzk/duw-queue-monitor/telegram-bot
     newTag: "1.0.0"
