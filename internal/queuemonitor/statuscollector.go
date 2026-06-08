@@ -60,14 +60,15 @@ func (s *StatusCollector) GetQueueStatus(ctx context.Context) (queueStatus *Queu
 
 	for _, queue := range response.Result[s.cfg.StatusMonitoredQueueCity] {
 		if queue.ID == s.cfg.StatusMonitoredQueueId {
-			// it happened a few times that DUW API returned negative tickets left
+			// DUW API occasionally reports a negative tickets_left; treat it as "no tickets left"
+			// (clamp to 0) instead of failing, so the monitor still processes state transitions
+			// (e.g. end-of-day close) and persists daily stats.
 			if queue.TicketsLeft < 0 {
-				err := fmt.Errorf("invalid queue data: TicketsLeft is negative (%d)", queue.TicketsLeft)
-				s.log.Error("DUW API returned negative TicketsLeft", err,
+				s.log.Warn("DUW API returned negative TicketsLeft, clamping to 0",
 					"queueId", queue.ID,
 					"ticketsLeft", queue.TicketsLeft,
 					"ticketValue", queue.TicketValue)
-				return nil, err
+				queue.TicketsLeft = 0
 			}
 			return &queue, nil
 		}

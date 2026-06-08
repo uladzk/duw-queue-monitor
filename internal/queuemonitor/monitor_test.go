@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -421,7 +422,7 @@ func TestCheckAndProcessStatus_WhenPushNotificationFailed_ReturnsError(t *testin
 	}
 }
 
-func TestCheckAndProcessStatus_WhenApiReturnsNegativeTicketsLeft_ReturnsErrorAndDoesNotNotify(t *testing.T) {
+func TestCheckAndProcessStatus_WhenApiReturnsNegativeTicketsLeft_ClampsToZeroAndProceeds(t *testing.T) {
 	// Arrange
 	mockDuwApi := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, `{
@@ -460,12 +461,16 @@ func TestCheckAndProcessStatus_WhenApiReturnsNegativeTicketsLeft_ReturnsErrorAnd
 	err := sut.CheckAndProcessStatus(context.Background())
 
 	// Assert
-	if err == nil {
-		t.Fatal("Expected error for negative TicketsLeft, but got nil")
+	if err != nil {
+		t.Fatalf("Expected no error for negative TicketsLeft, but got: %v", err)
 	}
 
-	if notifier.sendMessageCalled {
-		t.Error("Expected no notification to be sent for invalid data, but notification was sent")
+	if got := sut.GetState().TicketsLeft; got != 0 {
+		t.Errorf("Expected negative TicketsLeft to be clamped to 0, but got %d", got)
+	}
+
+	if strings.Contains(notifier.lastSentMessage, "-5") {
+		t.Errorf("Expected clamped value in notification, but raw negative leaked: %q", notifier.lastSentMessage)
 	}
 }
 
