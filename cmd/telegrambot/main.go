@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
 	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 	"github.com/uladzk/duw-queue-monitor/internal/telegrambot"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 )
 
 var log *logger.Logger
@@ -63,21 +64,27 @@ func buildBotWithHandlers() (*bot.Bot, *telegrambot.HandlerRegistry, error) {
 		return nil, nil, err
 	}
 
-	telegramNotifier := notifications.NewTelegramNotifier(&cfg.NotificationTelegram, log, &http.Client{})
-	handlerRegistry := telegrambot.NewHandlerRegistry(log, telegramNotifier, cfg.FeedbackChatID)
+	// Use a closure to break the circular dependency:
+	// bot needs default handler → handler registry needs notifier → notifier needs bot
+	var handlerRegistry *telegrambot.HandlerRegistry
 
 	opts := []bot.Option{
-		bot.WithDefaultHandler(handlerRegistry.GetDefaultHandler()),
+		bot.WithDefaultHandler(func(ctx context.Context, b *bot.Bot, update *models.Update) {
+			handlerRegistry.GetDefaultHandler()(ctx, b, update)
+		}),
 	}
 
-	bot, err := bot.New(cfg.NotificationTelegram.BotToken, opts...)
+	b, err := bot.New(cfg.NotificationTelegram.BotToken, opts...)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	handlerRegistry.RegisterAllHandlers(bot)
+	telegramNotifier := notifications.NewTelegramNotifier(&cfg.NotificationTelegram, b, log)
+	handlerRegistry = telegrambot.NewHandlerRegistry(log, telegramNotifier, cfg.FeedbackChatID)
 
-	return bot, handlerRegistry, nil
+	handlerRegistry.RegisterAllHandlers(b)
+
+	return b, handlerRegistry, nil
 }
 
 func buildLogger() (*logger.Logger, error) {
