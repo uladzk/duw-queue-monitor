@@ -5,7 +5,7 @@ on:
     inputs:
       service:
         type: choice
-        options: [queue-monitor, telegram-bot, queue-stats-reports, duw-migrations]
+        options: [queue-monitor, telegram-bot, queue-stats-reports, duw-migrations, duw-doctor-checker]
         description: 'Name of the service to publish'
         required: true
       version:
