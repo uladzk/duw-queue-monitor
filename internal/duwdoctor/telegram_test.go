@@ -56,8 +56,8 @@ func TestClassifyStatus_SubstringTrap(t *testing.T) {
 	cases := map[string]State{
 		"💤 Kolejka odbiór karty jest obecnie niedostępna (na razie nie ma wolnych biletów).": StateActiveDisabled,
 		"🔔 Kolejka odbiór karty jest dostępna! Pozostało biletów: 8":                         StateActiveEnabled,
-		"🌙 Kolejka odbiór karty jest nieaktywna — prawdopodobnie koniec godzin pracy DUW.":    StateInactive,
-		"📊 Kolejka Odbiór karty pobytu — podsumowanie dnia:":                                  "", // not a status
+		"🌙 Kolejka odbiór karty jest nieaktywna — prawdopodobnie koniec godzin pracy DUW.":   StateInactive,
+		"📊 Kolejka Odbiór karty pobytu — podsumowanie dnia:":                                 "", // not a status
 	}
 	for text, want := range cases {
 		st, ok := classifyStatus(text)
