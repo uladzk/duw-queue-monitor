@@ -110,3 +110,14 @@ flowchart LR
 ```
 
 Kubernetes manifests are Kustomize-managed (`infra/k8s/`: shared base + per-cloud/per-env overlays); cluster infrastructure is Terraform-managed (`infra/terraform/ovh/`). Secrets flow from Infisical into the cluster via External Secrets Operator — nothing secret lives in the repo.
+
+## Database migrations
+
+Schema migrations live in `db/migrations/` as [goose](https://github.com/pressly/goose) SQL files (`-- +goose Up` / `-- +goose Down`), numbered sequentially.
+
+They are applied in-cluster by the `duw-migrations` Kubernetes Job (`infra/k8s/base/postgres/migrations-job.yml`): an image built from `db/Dockerfile` (goose + the migration files, published via the same manual publish workflow as the services) that runs `goose up` against the stats database, with the connection string injected from the `postgres-app-duw-stats` secret. The Job manifest pins an explicit image version; applying a new migration means publishing a new `duw-migrations` image and applying the updated Job.
+
+Two coupling rules:
+
+- `sqlc` uses `db/migrations/` as its schema source — a new migration must exist before regenerating the data-access code (`internal/dailystats/`).
+- For local development, `cmd/queuemonitor/docker-compose.dev.yml` runs the same migrations against a local PostgreSQL automatically.
