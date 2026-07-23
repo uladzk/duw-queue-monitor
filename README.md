@@ -4,7 +4,7 @@
 [![Lint](https://github.com/uladzk/duw-queue-monitor/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/uladzk/duw-queue-monitor/actions/workflows/lint.yml)
 [![Go Version](https://img.shields.io/github/go-mod/go-version/uladzk/duw-queue-monitor)](go.mod)
 [![License](https://img.shields.io/github/license/uladzk/duw-queue-monitor)](LICENSE)
-[![Latest Tag](https://img.shields.io/github/v/tag/uladzk/duw-queue-monitor)](https://github.com/uladzk/duw-queue-monitor/tags)
+[![queue-monitor prd version](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fuladzk%2Fduw-queue-monitor%2Fmain%2Finfra%2Fk8s%2Foverlays%2Fovh-prd%2Fkustomization.yaml&query=%24.images%5B0%5D.newTag&label=queue-monitor%20(prd)&color=blue)](infra/k8s/overlays/ovh-prd/kustomization.yaml)
 
 Near real-time Telegram notifications about the appointment-queue status at Dolnośląski Urząd Wojewódzki (DUW, the Lower Silesian Voivodeship Office in Wrocław, Poland).
 
