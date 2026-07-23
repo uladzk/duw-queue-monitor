@@ -62,7 +62,7 @@ func TestHandleReplyMessage_WhenUpdateIsNil_DoesNotPanicAndReturnsFalse(t *testi
 	sut := NewDefaultHandler(logger, mockReplyRegistry, mockHandlerRegistry)
 
 	// Act
-	success := sut.handleReplyMessage(nil, nil, nil)
+	success := sut.handleReplyMessage(context.Background(), nil, nil)
 
 	// Assert
 	if success {
@@ -80,7 +80,7 @@ func TestHandleReplyMessage_WhenMessageIsNil_DoesNotPanicAndReturnsFalse(t *test
 	update := &models.Update{Message: nil}
 
 	// Act
-	success := sut.handleReplyMessage(nil, nil, update)
+	success := sut.handleReplyMessage(context.Background(), nil, update)
 
 	// Assert
 	if success {
@@ -102,7 +102,7 @@ func TestHandleReplyMessage_WhenReplyToMessageIsNil_DoesNotPanicAndReturnsFalse(
 	}
 
 	// Act
-	success := sut.handleReplyMessage(nil, nil, update)
+	success := sut.handleReplyMessage(context.Background(), nil, update)
 
 	// Assert
 	if success {
@@ -126,7 +126,7 @@ func TestDefaultHandler_HandleReplyMessage_WhenReplyToMessageTextIsEmpty_Returns
 	}
 
 	// Act
-	success := sut.handleReplyMessage(nil, nil, update)
+	success := sut.handleReplyMessage(context.Background(), nil, update)
 
 	// Assert
 	if success != false {
@@ -150,7 +150,7 @@ func TestHandleReplyMessage_WhenNoHandlerFound_DoesNotPanicAndReturnsFalse(t *te
 	}
 
 	// Act
-	success := sut.handleReplyMessage(nil, nil, update)
+	success := sut.handleReplyMessage(context.Background(), nil, update)
 
 	// Assert
 	if success {
@@ -192,7 +192,7 @@ func TestHandleReplyMessage_WhenHandlerFound_CallsHandlerAndReturnsTrue(t *testi
 	}
 
 	// Act
-	success := sut.handleReplyMessage(nil, nil, update)
+	success := sut.handleReplyMessage(context.Background(), nil, update)
 
 	// Assert
 	if !success {
