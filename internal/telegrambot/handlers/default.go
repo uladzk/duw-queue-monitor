@@ -3,8 +3,8 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"strings"
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"strings"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

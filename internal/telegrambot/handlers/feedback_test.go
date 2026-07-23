@@ -3,11 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/uladzk/duw-queue-monitor/internal/logger"
-	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 )
 
 func createMockTelegramNotifier(shouldFail bool) *notifications.TelegramNotifier {

@@ -96,4 +96,3 @@ func (r *Reporter) sendMonthlyReport(ctx context.Context, chatID string) error {
 	r.log.Info("Sending monthly report", "month", start.Format(time.DateOnly))
 	return r.sender.SendMessage(ctx, chatID, msg)
 }
-

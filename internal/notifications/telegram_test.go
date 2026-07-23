@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"github.com/uladzk/duw-queue-monitor/internal/logger"
 )
 
 func TestSendMessage_WhenRequestSuccessful_SendsMessageToTelegramApiWithCorrectFormat(t *testing.T) {

@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"context"
-	"testing"
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"testing"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
