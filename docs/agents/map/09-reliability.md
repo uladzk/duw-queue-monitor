@@ -35,9 +35,11 @@ How this system fails and where the mechanism lives. Symptom strings are grep ta
 
 Tight by design (cost-optimized single OVH `d2-4` node). queue-monitor 100m/128Mi, telegram-bot 100m req/128Mi limit, CronJobs 50m/64Mi→100m/128Mi, CNPG 100m/256Mi→500m/512Mi, Redis 100m/256Mi. Redis persistence disabled (`save ""`, `appendonly no`) — a Redis restart wipes `monitor:state` (acceptable, see above). Postgres storage 1Gi.
 
-## Known non-idempotency to fix carefully
+## Known non-idempotency — ACCEPTED, won't fix
 
-The duplicate-notification class of bug is architectural: any change to the send/advance ordering must ensure the state advances even when a send *times out but may have succeeded*, or must make sends idempotent (e.g. dedupe key). Don't "fix" it by only widening the timeout — that reduces frequency, not the race.
+**Decision (owner, 2026-06-16, re-confirmed 2026-07-23): accepted as-is — do not propose a fix.** Duplicates are strictly preferable to a dropped alert (a missed "queue available" message can cost someone their appointment); the monitor is intentionally at-least-once, and the one incident in a year self-recovered in ~2 minutes. The duw-doctor checker detects the flood signature as a known issue.
+
+If this is ever revisited: any change to the send/advance ordering must ensure the state advances even when a send *times out but may have succeeded*, or must make sends idempotent (e.g. dedupe key). Don't "fix" it by only widening the timeout — that reduces frequency, not the race — and don't advance-on-timeout (dropping messages was explicitly rejected).
 
 ---
 
