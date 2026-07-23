@@ -5,6 +5,7 @@ resources:
   - ../../base
 
 images:
+  # keep queue-monitor first — the README version badge reads images[0].newTag
   - name: acrduwshared.azurecr.io/queue-monitor
     newName: ghcr.io/uladzk/duw-queue-monitor/queue-monitor
     newTag: "1.5.1"
