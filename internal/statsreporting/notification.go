@@ -80,4 +80,3 @@ func buildMonthlyMsg(queueName string, stats []dailystats.QueueDailyStat) string
 	}
 	return fmt.Sprintf(msgMonthlyReport, queueName, totalAvailable, totalTaken)
 }
-

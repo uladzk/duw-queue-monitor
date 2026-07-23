@@ -3,8 +3,8 @@ package queuemonitor
 import (
 	"context"
 	"fmt"
-	"time"
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"time"
 )
 
 // Runner is responsible for the main loop of the status collector which periodically checks the queue status using the QueueMonitor.

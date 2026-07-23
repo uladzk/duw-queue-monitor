@@ -53,13 +53,13 @@ func (f *mockNotifier) SendMessage(ctx context.Context, chatID, text string) err
 }
 
 type mockDailyStatsRepo struct {
-	saveCalled                 bool
-	lastQueueID                int
-	lastQueueName              string
-	lastDate                   time.Time
-	lastTotalTicketsAvailable  int
-	lastTakenTickets           int
-	shouldFail                 bool
+	saveCalled                bool
+	lastQueueID               int
+	lastQueueName             string
+	lastDate                  time.Time
+	lastTotalTicketsAvailable int
+	lastTakenTickets          int
+	shouldFail                bool
 }
 
 func (m *mockDailyStatsRepo) SaveDailyStats(ctx context.Context, queueID int, queueName string, date time.Time, totalTicketsAvailable int, takenTickets int) error {
