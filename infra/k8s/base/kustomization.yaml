@@ -16,3 +16,8 @@ resources:
   - redis/redis-config-map.yml
   - redis/redis-deployment.yml
   - redis/redis-service.yml
+  - duw-doctor/serviceaccount-checker.yml
+  - duw-doctor/role-checker.yml
+  - duw-doctor/rolebinding-checker.yml
+  - duw-doctor/configmap-state.yml
+  - duw-doctor/cronjob-checker.yml

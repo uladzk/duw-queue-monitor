@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: duw-doctor-checker
+  namespace: default
+  labels:
+    app: duw-doctor-checker
+# Read-only across workloads; the only write is get/update on the single state ConfigMap.
+# Deliberately absent: every create/patch/delete on workloads, pods/exec, pods/eviction,
+# jobs, and secrets. Secrets reach the pod as kubelet-injected env from the ESO Secret,
+# so no get-secret permission is needed.
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "events"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["duw-doctor-state"]
+    verbs: ["get", "update"]

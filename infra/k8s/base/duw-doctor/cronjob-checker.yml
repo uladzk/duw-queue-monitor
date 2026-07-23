@@ -1,0 +1,56 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: duw-doctor-checker
+  namespace: default
+  labels:
+    app: duw-doctor-checker
+spec:
+  # Etc/UTC (not the stats jobs' Europe/Warsaw) — the monitor working window is defined in UTC.
+  schedule: "*/3 4-18 * * 1-5"
+  timeZone: "Etc/UTC"
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 120
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app: duw-doctor-checker
+        spec:
+          serviceAccountName: duw-doctor-checker
+          restartPolicy: Never
+          containers:
+            - name: duw-doctor-checker
+              image: acrduwshared.azurecr.io/duw-doctor-checker:1.0.0
+              env:
+                - name: LOG_LEVEL
+                  value: "info"
+                # DRY_RUN stays true until go-live is approved (then flipped to "false").
+                - name: DRY_RUN
+                  value: "true"
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                # Reuse the existing feedback-bot secret directly (no new ExternalSecret).
+                - name: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: telegram-bot-external-secret
+                      key: NOTIFICATION_TELEGRAM_BOT_TOKEN
+                - name: NOTIFICATION_TELEGRAM_FEEDBACK_CHAT_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: telegram-bot-external-secret
+                      key: NOTIFICATION_TELEGRAM_FEEDBACK_CHAT_ID
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 32Mi
+                limits:
+                  cpu: 100m
+                  memory: 64Mi
