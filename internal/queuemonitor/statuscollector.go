@@ -29,7 +29,7 @@ type Response struct {
 type Queue struct {
 	ID                int    `json:"id"`
 	Name              string `json:"name"`
-	Enabled           bool   `json:"enabled"`           // whether the queue accepts new registrations
+	Enabled           bool   `json:"enabled"`            // whether the queue accepts new registrations
 	Active            bool   `json:"active"`             // whether the queue is operating today
 	TicketValue       string `json:"ticket_value"`       // current ticket number being served (string, not int)
 	TicketsLeft       int    `json:"tickets_left"`       // tickets still available for registration

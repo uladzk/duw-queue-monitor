@@ -2,12 +2,12 @@ package telegrambot
 
 import (
 	"fmt"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"testing"
-	"github.com/uladzk/duw-queue-monitor/internal/logger"
-	"github.com/uladzk/duw-queue-monitor/internal/notifications"
 
 	"github.com/go-telegram/bot"
 )

@@ -5,10 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 	"io"
 	"net/http"
 	"time"
-	"github.com/uladzk/duw-queue-monitor/internal/logger"
 
 	"github.com/avast/retry-go/v4"
 )

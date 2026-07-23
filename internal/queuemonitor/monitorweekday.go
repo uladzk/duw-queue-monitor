@@ -3,8 +3,8 @@ package queuemonitor
 import (
 	"context"
 	"fmt"
-	"time"
 	"github.com/uladzk/duw-queue-monitor/internal/logger"
+	"time"
 )
 
 // WeekdayQueueMonitor is a wrapper around the DefaultQueueMonitor that disables queue monitoring on weekends and outside configured working hours (UTC).

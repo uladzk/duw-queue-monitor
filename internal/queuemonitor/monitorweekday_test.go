@@ -2,9 +2,9 @@ package queuemonitor
 
 import (
 	"context"
+	"github.com/uladzk/duw-queue-monitor/internal/logger"
 	"testing"
 	"time"
-	"github.com/uladzk/duw-queue-monitor/internal/logger"
 )
 
 type MockTimeProvider struct {
