@@ -8,7 +8,7 @@ on:
 
 jobs:
   golangci:
-    name: golangci-lint
+    name: Lint
     runs-on: ubuntu-latest
     steps:
     - id: checkout
@@ -26,3 +26,4 @@ jobs:
       uses: golangci/golangci-lint-action@v8
       with:
         version: v2.12.2
+        only-new-issues: true
