@@ -8,6 +8,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/lib/pq v1.11.1
 	github.com/pressly/goose/v3 v3.26.0
+	github.com/quasilyte/go-ruleguard/dsl v0.3.23
 	github.com/redis/go-redis/v9 v9.10.0
 	github.com/testcontainers/testcontainers-go v0.37.0
 )

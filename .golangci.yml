@@ -9,9 +9,20 @@ linters:
     - ineffassign
     - misspell
     - gocyclo
+    - gocritic
   settings:
     gocyclo:
       min-complexity: 15
+    gocritic:
+      enabled-tags: [diagnostic, style]
+      settings:
+        ruleguard:
+          failOn: all
+          rules: "${base-path}/.golangci/rules.go"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
 formatters:
   enable:
